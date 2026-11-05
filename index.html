@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAMEVERSE - Play The Last Battalion</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00ff88">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#0a0a12;color:#fff}
+header{padding:20px;display:flex;justify-content:space-between;align-items:center;background:#111126}
+.logo{font-size:26px;font-weight:900;color:#00ff88}
+.logo span{color:#fff}
+.btn{background:#00ff88;color:#000;padding:10px 18px;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+.hero{text-align:center;padding:50px 20px;background:linear-gradient(180deg,#1a1a3a,#0a0a12)}
+.hero h1{font-size:42px;line-height:1.1}
+.hero p{margin:15px 0;color:#aaa}
+.games{padding:20px;max-width:900px;margin:auto}
+.card{background:#1a1a2e;border-radius:16px;overflow:hidden;margin-bottom:20px;border:1px solid #333}
+.card img{width:100%;height:220px;object-fit:cover;background:#222}
+.card-body{padding:20px}
+.card-body h2{font-size:24px}
+.badge{background:#00ff88;color:#000;font-size:12px;padding:4px 10px;border-radius:20px;font-weight:700}
+.ad-box{background:#fff;color:#000;text-align:center;padding:15px;margin:20px auto;max-width:900px;border-radius:10px}
+.ad-box small{color:#888}
+#status{text-align:center;padding:10px;color:#00ff88}
+#installBtn{display:none;background:#fff;color:#000;margin-top:15px}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">GAME<span>VERSE</span></div>
+<button class="btn" onclick="login()">Login / Signup</button>
+</header>
+<div class="hero">
+<h1>Play. Earn. Dominate.</h1>
+<p>Pinoy Gaming Hub - The Last Battalion is LIVE</p>
+<button class="btn" onclick="document.getElementById('games').scrollIntoView()">▶ Play Now</button>
+<br>
+<button class="btn" id="installBtn">📲 INSTALL GAMEVERSE APP</button>
+</div>
+<div id="status">Connecting to Firestore...</div>
+<div class="ad-box"><small>ADVERTISEMENT</small><div id="ad-slot">AD SLOT DITO</div></div>
+<div class="games" id="games"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const firebaseConfig = { apiKey: "AIzaSyCeMwYBG6AVch8CXr-Y4ngcp9cmWtqsruU", authDomain: "gameverse-102213.firebaseapp.com", projectId: "gameverse-102213", storageBucket: "gameverse-102213.firebasestorage.app", messagingSenderId: "87748222074", appId: "1:87748222074:web:ef7757ff1df09e84006fc3", measurementId: "G-548P0BBQM4" };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+async function loadGames(){
+const box=document.getElementById('games'); const status=document.getElementById('status');
+try{ const snap=await getDocs(collection(db,"games")); if(snap.empty){status.innerText="Walang games pa - pero connected na!";return;} status.innerText="✅ Connected - "+snap.size+" game(s) found";
+snap.forEach(doc=>{const g=doc.data(); box.innerHTML+=`<div class="card"><img src="${g.thumbnailUrl||'https://via.placeholder.com/900x220?text=THE+LAST+BATTALION'}"><div class="card-body"><span class="badge">${g.genre||'Action'} • ${g.views||0} views</span><h2 style="margin-top:10px">${g.title||'The Last Battalion'}</h2><p style="color:#aaa;margin:10px 0">${g.description||''}</p><button class="btn" onclick="playGame('${g.gameUrl||'#'}')">▶ PLAY NOW</button></div></div>`;});
+}catch(e){status.innerText="Error: "+e.message;}
+}
+window.playGame=(url)=>{if(url&&url!=='#')window.open(url,'_blank');else alert('Lagay mo gameUrl sa Firestore boss!');}
+window.login=async()=>{try{const p=new GoogleAuthProvider();const r=await signInWithPopup(auth,p);alert('Welcome boss! '+r.user.displayName);}catch(e){alert(e.message);}}
+loadGames();
+</script>
+<script>
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+let deferredPrompt; const installBtn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault(); deferredPrompt=e; installBtn.style.display='inline-block';});
+installBtn.addEventListener('click', async ()=>{ if(deferredPrompt){ deferredPrompt.prompt(); const c=await deferredPrompt.userChoice; if(c.outcome==='accepted') installBtn.style.display='none'; deferredPrompt=null; }});
+</script>
+</body>
+</html>
