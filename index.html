@@ -22,6 +22,24 @@ footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
 </style></head><body>
 <header><div class="logo">GAME<span>VERSE</span> PH</div><button class="btn" id="loginBtn">Login / Sign up</button></header>
 <section class="hero"><h1>PLAY. <span>EARN.</span> DOMINATE.</h1><p>Your Pinoy Gaming Hub — six mini-games, one lobby.</p><a class="btn" href="#games">▶ PLAY NOW</a></section>
+
+<div id="authModal" style="display:none;position:fixed;inset:0;background:#000b;z-index:20;align-items:center;justify-content:center;padding:18px">
+ <div style="width:min(100%,420px);background:#17172a;border:1px solid #444;border-radius:16px;padding:22px;position:relative">
+  <button id="closeAuth" aria-label="Close" style="position:absolute;right:14px;top:12px;background:none;border:0;color:#fff;font-size:24px">×</button>
+  <h2 id="authTitle" style="margin:0 0 8px;color:#00ff88">Create your account</h2>
+  <p style="color:#aaa;font-size:14px;margin:0 0 16px">Join GAMEVERSE PH and save your player account.</p>
+  <form id="authForm">
+   <label style="display:block;margin:10px 0 5px">Display name</label><input id="authName" autocomplete="name" placeholder="Your player name" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
+   <label style="display:block;margin:10px 0 5px">Email address</label><input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
+   <label style="display:block;margin:10px 0 5px">Password</label><input id="authPassword" type="password" autocomplete="new-password" required minlength="6" placeholder="At least 6 characters" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
+   <button class="btn" id="authSubmit" type="submit" style="width:100%;margin-top:16px">Create Account</button>
+  </form>
+  <button id="googleBtn" class="btn" style="width:100%;margin-top:10px;background:#fff;color:#222">Continue with Google</button>
+  <p id="authMessage" role="status" style="color:#ffcc80;font-size:13px;min-height:18px"></p>
+  <p style="font-size:14px;color:#bbb;text-align:center"><span id="switchPrompt">Already have an account?</span> <button id="switchAuth" style="background:none;border:0;color:#00ff88;text-decoration:underline;cursor:pointer">Log in</button></p>
+  <button id="forgotPassword" style="display:block;margin:0 auto;background:none;border:0;color:#aaa;text-decoration:underline;cursor:pointer">Forgot password?</button>
+ </div>
+</div>
 <main class="wrap">
 <div class="bar"><div><h2 style="margin:0 0 5px">🎮 Game Lobby</h2><div class="status" id="status">Choose a game and start playing.</div></div><div class="wallet">⭐ Practice points: <b id="points">0</b></div></div>
 <div class="bar"><div class="filters" id="filters"><button class="filter active" data-filter="All">All Games</button><button class="filter" data-filter="Arcade">Arcade</button><button class="filter" data-filter="Puzzle">Puzzle</button><button class="filter" data-filter="Strategy">Strategy</button><button class="filter" data-filter="Challenge">Challenges</button></div></div>
@@ -37,11 +55,29 @@ footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
 </main><footer>© 2026 GAMEVERSE PH • Play fair. Have fun.</footer>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut,createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile,sendPasswordResetEmail,sendEmailVerification}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const firebaseConfig={apiKey:"AIzaSyCeMwYBG6AVch8CXr-Y4ngcp9cmWtqsruU",authDomain:"gameverse-102213.firebaseapp.com",projectId:"gameverse-102213",storageBucket:"gameverse-102213.firebasestorage.app",messagingSenderId:"87748222074",appId:"1:87748222074:web:ef7757ff1df09e84006fc3",measurementId:"G-548P0BBQM4"};
-const app=initializeApp(firebaseConfig),auth=getAuth(app),loginBtn=document.getElementById('loginBtn');
-loginBtn.onclick=async()=>{try{if(auth.currentUser){await signOut(auth)}else{await signInWithPopup(auth,new GoogleAuthProvider())}}catch(e){document.getElementById('status').textContent='Sign-in error: '+e.message}};
-onAuthStateChanged(auth,user=>{loginBtn.textContent=user?'Sign out':'Login / Sign up';document.getElementById('status').textContent=user?'Welcome, '+(user.displayName||'player')+'! Choose a game.':'Choose a game and start playing.'});
+const app=initializeApp(firebaseConfig),auth=getAuth(app);
+const $=id=>document.getElementById(id),modal=$('authModal'),form=$('authForm');
+let mode='signup';
+function showMessage(message,isError=true){$('authMessage').textContent=message;$('authMessage').style.color=isError?'#ff9b9b':'#00ff88'}
+function setMode(next){mode=next;const signup=mode==='signup';$('authTitle').textContent=signup?'Create your account':'Welcome back';$('authName').style.display=signup?'block':'none';$('authName').previousElementSibling.style.display=signup?'block':'none';$('authName').required=signup;$('authPassword').autocomplete=signup?'new-password':'current-password';$('authSubmit').textContent=signup?'Create Account':'Log In';$('switchPrompt').textContent=signup?'Already have an account?':"Don't have an account?";$('switchAuth').textContent=signup?'Log in':'Sign up';$('forgotPassword').style.display=signup?'none':'block';showMessage('')}
+function openModal(){modal.style.display='flex';setMode('signup')}
+function closeModal(){modal.style.display='none';form.reset();showMessage('')}
+$('loginBtn').onclick=()=>{if(auth.currentUser){signOut(auth).catch(e=>document.getElementById('status').textContent=e.message)}else openModal()};
+$('closeAuth').onclick=closeModal;
+modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+$('switchAuth').onclick=()=>setMode(mode==='signup'?'login':'signup');
+form.addEventListener('submit',async e=>{e.preventDefault();const email=$('authEmail').value.trim(),password=$('authPassword').value;const submit=$('authSubmit');submit.disabled=true;submit.textContent='Please wait...';showMessage('');
+try{
+ if(mode==='signup'){const credential=await createUserWithEmailAndPassword(auth,email,password);const name=$('authName').value.trim();if(name)await updateProfile(credential.user,{displayName:name});await sendEmailVerification(credential.user);showMessage('Account created! Check your email to verify your account.',false);setTimeout(closeModal,2200)}
+ else{await signInWithEmailAndPassword(auth,email,password);closeModal()}
+}catch(error){const messages={'auth/email-already-in-use':'This email already has an account. Please log in.','auth/invalid-email':'Please enter a valid email address.','auth/weak-password':'Password must be at least 6 characters.','auth/user-not-found':'No account found with this email.','auth/wrong-password':'Incorrect email or password.','auth/invalid-credential':'Incorrect email or password.','auth/too-many-requests':'Too many attempts. Please try again later.','auth/operation-not-allowed':'Email/password sign-in is not enabled yet in Firebase Authentication.'};showMessage(messages[error.code]||error.message)}
+finally{submit.disabled=false;submit.textContent=mode==='signup'?'Create Account':'Log In'}
+});
+$('googleBtn').onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());closeModal()}catch(e){showMessage(e.message)}};
+$('forgotPassword').onclick=async()=>{const email=$('authEmail').value.trim();if(!email){showMessage('Enter your email address first.');return}try{await sendPasswordResetEmail(auth,email);showMessage('Password reset email sent. Check your inbox.',false)}catch(e){showMessage(e.message)}};
+onAuthStateChanged(auth,user=>{ $('loginBtn').textContent=user?'Sign out':'Login / Sign up';$('status').textContent=user?'Welcome, '+(user.displayName||user.email||'player')+'! Choose a game.':'Choose a game and start playing.'});
 </script>
 <script>
 const pts=()=>document.getElementById('points').textContent=localStorage.getItem('gv_points')||'0';pts();window.addEventListener('storage',pts);
