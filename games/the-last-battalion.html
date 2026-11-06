@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#090914"><title>The Last Battalion — Peejay the Sky Piercer</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090914;color:#fff;font-family:Arial,sans-serif}header{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:#141426;border-bottom:1px solid #34344c;gap:10px}a,.btn{color:#06130c;background:#00ff88;border:0;border-radius:9px;padding:10px 14px;font-weight:bold;text-decoration:none;cursor:pointer}.brand{font-weight:900;color:#00ff88}.wrap{max-width:850px;margin:auto;padding:18px}.intro,.panel{background:#17172a;border:1px solid #33334c;border-radius:14px;padding:18px;margin-bottom:14px}.intro h1{font-size:clamp(24px,6vw,38px);margin:6px 0;color:#00ff88}.muted{color:#bbb;line-height:1.5}.hud{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:10px 0}.stat{background:#202039;padding:9px 12px;border-radius:9px}.arena{height:340px;position:relative;overflow:hidden;border:2px solid #424260;border-radius:14px;background:radial-gradient(ellipse at 50% 110%,#29434a,#111629 65%,#080b17)}.skyline{position:absolute;bottom:0;left:0;right:0;height:90px;background:linear-gradient(90deg,#131526 0 8%,transparent 8% 11%,#191b30 11% 22%,transparent 22% 26%,#16192b 26% 43%,transparent 43% 47%,#191b30 47% 63%,transparent 63% 68%,#17192c 68% 85%,transparent 85%);opacity:.9}.hero,.enemy{position:absolute;bottom:55px;font-size:42px;filter:drop-shadow(0 0 10px #00ff88)}.hero{left:18%;transition:left .12s}.enemy{right:18%;filter:drop-shadow(0 0 10px #ff4949)}.beam{position:absolute;left:28%;bottom:78px;width:0;height:7px;background:#ffe36b;box-shadow:0 0 16px #ffe36b;border-radius:8px;transition:width .12s}.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.controls button{padding:15px 8px;font-size:17px}.controls .attack{background:#ffd65b}.message{min-height:42px;color:#ffd98a;line-height:1.4;padding-top:8px}.bar{height:10px;background:#333;border-radius:20px;overflow:hidden;min-width:100px}.bar span{display:block;height:100%;background:#00ff88;width:100%}.hidden{display:none!important}.small{font-size:12px;color:#aaa}
+</style></head><body>
+<header><a href="../index.html">← GAMEVERSE</a><div class="brand">THE LAST BATTALION</div><span class="small">MISSION 01</span></header>
+<main class="wrap">
+<section class="intro"><div class="small">2147 • PARANAQUE SECTOR</div><h1>PEEJAY: THE SKY PIERCER</h1><p class="muted">Bumagsak ang Sky Wall. Dumating ang Higop drones upang nakawin ang hangin ng lungsod. Ikaw si Peejay Kurogane — ang Payat na Haligi. Iligtas ang sektor!</p><button class="btn" id="start">▶ SIMULAN ANG MISYON</button></section>
+<section id="game" class="panel hidden">
+<div class="hud"><div class="stat">❤️ Buhay: <b id="hp">3</b></div><div class="stat">⚡ Enerhiya: <b id="energy">0</b></div><div class="stat">🎯 Talo: <b id="kills">0</b>/5</div></div>
+<div class="hud"><span class="small">Peejay</span><div class="bar"><span id="healthbar"></span></div><span class="small">Higop drone</span></div>
+<div class="arena" id="arena"><div class="skyline"></div><div class="hero" id="hero">🧍‍♂️</div><div class="beam" id="beam"></div><div class="enemy" id="enemy">🤖</div></div>
+<div class="controls"><button id="left">⬅ KALIWA</button><button class="attack" id="attack">⚔ SAKASAK</button><button id="right">KANAN ➡</button></div>
+<div class="message" id="message">Lumapit sa drone at pindutin ang SAKASAK!</div>
+</section>
+<section id="result" class="intro hidden"><h2 id="resultTitle">MISYON TAPOS</h2><p id="resultText" class="muted"></p><button class="btn" id="again">ULITIN ANG MISYON</button></section>
+<p class="small">Demo gameplay lamang. Walang cash reward o withdrawable points sa mission na ito.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);let x=18,hp=3,kills=0,energy=0,active=false,busy=false;
+function paint(){$('hero').style.left=x+'%';$('hp').textContent=hp;$('kills').textContent=kills;$('energy').textContent=energy;$('healthbar').style.width=(hp/3*100)+'%'}
+function move(d){if(!active)return;x=Math.max(5,Math.min(68,x+d));paint();if(x>48)$('message').textContent='Nasa saklaw ka na! Pindutin ang SAKASAK!'}
+function finish(win){active=false;$('game').classList.add('hidden');$('result').classList.remove('hidden');$('resultTitle').textContent=win?'SEKTOR NAILIGTAS!':'MISION FAILED';$('resultText').textContent=win?'Natalo mo ang limang Higop drones. Pero simula pa lamang ito…':'Nabigo ang depensa ng sektor. Subukan muli at iligtas ang mga tao.'}
+function attack(){if(!active||busy)return;if(x<38){$('message').textContent='Masyado ka pang malayo! Lumapit sa drone.';return}busy=true;$('beam').style.width='38%';$('message').textContent='Peejay: “Hindi ninyo kukunin ang hininga ng mga tao!”';setTimeout(()=>{$('beam').style.width='0';kills++;energy+=20;$('enemy').textContent='💥';paint();$('message').textContent='Tinamaan ang Higop drone!';setTimeout(()=>{if(kills>=5){finish(true);return}$('enemy').textContent='🤖';x=18;paint();$('message').textContent='May panibagong drone! Lumapit at umatake.';busy=false},550)},220)}
+function start(){hp=3;kills=0;energy=0;x=18;busy=false;active=true;$('result').classList.add('hidden');$('game').classList.remove('hidden');$('enemy').textContent='🤖';paint();$('message').textContent='Lumapit sa drone at pindutin ang SAKASAK!'}
+$('start').onclick=()=>{ $('start').classList.add('hidden');start()};$('again').onclick=start;$('left').onclick=()=>move(-8);$('right').onclick=()=>move(8);$('attack').onclick=attack;
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')move(-8);if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')move(8);if(e.key===' '||e.key==='Enter')attack()});
+</script></body></html>
