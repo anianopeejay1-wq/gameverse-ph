@@ -1,0 +1,9 @@
+{
+  "name": "GAMEVERSE PH",
+  "short_name": "GAMEVERSE",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#090914",
+  "theme_color": "#00ff88",
+  "description": "Pinoy Gaming Hub with six mini-games"
+}
