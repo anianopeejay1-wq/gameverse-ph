@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#00ff88"><title>Tic-Tac-Toe | GAMEVERSE PH</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090914;color:#fff;font:16px Arial,sans-serif;min-height:100vh;padding:20px}
+header,.wrap{max-width:760px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px}
+a,.btn{background:#00ef88;color:#06130c;border:0;border-radius:9px;padding:10px 15px;font-weight:800;text-decoration:none;cursor:pointer}
+h1{color:#00ef88;margin:8px 0}.panel{background:#17172a;border:1px solid #30304a;border-radius:16px;padding:20px;margin:14px 0;text-align:center}
+button{font:inherit}.muted{color:#aaa}.score{font-size:20px;color:#00ef88;font-weight:800;margin:12px}
+.grid{display:grid;gap:8px;justify-content:center;margin:16px auto}.cell{background:#292943;border:1px solid #454566;border-radius:8px;display:grid;place-items:center;min-width:48px;min-height:48px;font-size:22px;font-weight:800;color:white;cursor:pointer}
+input{padding:10px;border-radius:8px;border:0;max-width:100%}
+@media(max-width:500px){body{padding:12px}.panel{padding:14px}.cell{min-width:42px;min-height:42px}}
+</style></head><body><header><b style="color:#00ef88;font-size:22px">GAMEVERSE PH</b><a href="../index.html">← Game Lobby</a></header><main class="wrap"><section class="panel"><h1>Tic-Tac-Toe</h1><p class="muted">Play for fun • Earn practice points</p><div class="score" id="status">Your turn: X</div><div id="board" class="grid" style="grid-template-columns:repeat(3,76px)"></div><button class="btn" onclick="reset()">New Game</button><p>Practice points: <b id="points">0</b></p></section></main><script>
+function award(points){let total=Number(localStorage.getItem('gv_points')||0)+points;localStorage.setItem('gv_points',total);let el=document.getElementById('points');if(el)el.textContent=total;}
+let board=Array(9).fill(''),over=false;function render(){let el=document.getElementById('board');el.innerHTML='';board.forEach((v,i)=>{let b=document.createElement('button');b.className='cell';b.style.height='76px';b.textContent=v;b.onclick=()=>play(i);el.appendChild(b)})}function winner(){for(let [a,b,c] of [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]])if(board[a]&&board[a]===board[b]&&board[a]===board[c])return board[a];return board.every(Boolean)?'draw':null}function play(i){if(over||board[i])return;board[i]='X';let w=winner();if(!w){let empty=board.map((v,i)=>v?null:i).filter(v=>v!==null);if(empty.length)board[empty[Math.floor(Math.random()*empty.length)]]='O';w=winner()}if(w){over=true;document.getElementById('status').textContent=w==='draw'?'Draw!':w==='X'?'You win!':'CPU wins!';if(w==='X')award(5)}else document.getElementById('status').textContent='Your turn: X';render()}function reset(){board=Array(9).fill('');over=false;document.getElementById('status').textContent='Your turn: X';render()}reset();
+</script></body></html>
