@@ -89,7 +89,7 @@ if(hp<=0){hp=0;gameOver=true;$('start').disabled=true;say('The castle has fallen
 if(!spawning&&enemies.length===0&&!cleared&&wave>0&&!gameOver){cleared=true;gold+=25;$('start').disabled=false;say(wave===10?'VICTORY! You survived all 10 waves! +25 gold.':'Wave '+wave+' cleared! +25 gold. Prepare for the next attack.')}
 if(wave>=10&&cleared)$('start').disabled=true;updateHud()}
 renderer.render(scene,camera)}
-function restart(){if(renderer)renderer.setAnimationLoop(null);scene?.traverse(o=>{if(o.isMesh){o.geometry?.dispose();if(o.material&&!Array.isArray(o.material))o.material.dispose()}});buildings=[];enemies=[];bolts=[];hp=100;maxHp=100;gold=150;wave=0;kills=0;spawning=false;spawnLeft=0;gameOver=false;cleared=true;selected=null;document.querySelectorAll('.toolbar .btn').forEach(b=>{b.disabled=false;b.classList.remove('active')});init();updateHud();say('Fresh kingdom! Build defenses on green pads, then start Wave 1.')}
+function restart(){location.reload()}
 $('archer').onclick=()=>choose('archer');$('cannon').onclick=()=>choose('cannon');$('wall').onclick=()=>choose('wall');
 $('upgrade').onclick=()=>{if(gold<90)return say('Upgrade costs 90 gold.');gold-=90;maxHp+=35;hp=Math.min(maxHp,hp+35);updateHud();say('Castle upgraded! +35 maximum health.')};
 $('repair').onclick=()=>{if(hp>=maxHp)return say('Castle health is already full.');if(gold<30)return say('Repair costs 30 gold.');gold-=30;hp=Math.min(maxHp,hp+35);updateHud();say('Castle repaired by up to 35 health.')};
