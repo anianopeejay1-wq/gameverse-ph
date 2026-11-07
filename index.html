@@ -46,6 +46,18 @@ footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
 .dash-action{background:#24243c;color:#fff;border:1px solid #464664;border-radius:9px;padding:10px 13px;font-weight:700;margin:5px 5px 0 0}
 .dash-action:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:520px){.dashboard-shell{padding:14px 12px}.dashpanel{padding:14px}.dashnav button{padding:10px 12px;font-size:12px}}
+.chartbox{background:#101020;border:1px solid #30304b;border-radius:12px;padding:15px;margin-top:14px}
+.charttitle{font-weight:800;color:#00ff88;margin-bottom:10px}
+.bar-chart{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end;min-height:150px;padding:12px 4px 0}
+.bar-col{display:flex;flex-direction:column;align-items:center;justify-content:end;height:145px;gap:7px}
+.bar-track{height:105px;width:min(42px,70%);background:#24243c;border-radius:8px 8px 3px 3px;display:flex;align-items:end;overflow:hidden}
+.bar-fill{width:100%;background:linear-gradient(180deg,#00ff88,#00a86b);border-radius:7px 7px 0 0;min-height:4px}
+.bar-value{font-size:12px;color:#fff;font-weight:800}.bar-label{font-size:11px;color:#aaa;text-align:center}
+.empty-chart{padding:25px;text-align:center;border:1px dashed #45455f;border-radius:10px;color:#999}
+.mission-list{display:grid;gap:10px;margin-top:14px}
+.mission-card{display:flex;align-items:center;justify-content:space-between;gap:15px;background:#101020;border:1px solid #30304b;border-radius:12px;padding:14px}
+.mission-card small{color:#00ff88}
+@media(max-width:520px){.mission-card{align-items:flex-start;flex-direction:column}.mission-card .dash-action{margin-left:0}}
 
 </style>
 </head>
@@ -78,7 +90,8 @@ footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
     <button data-panel="dashboardPanel">📊 Dashboard</button>
     <button data-panel="pointsPanel">⭐ Earnings Points</button>
     <button data-panel="coinsPanel">🪙 Coin Manager</button>
-    <button data-panel="bankPanel">🏦 Bank Linking</button>
+    <button data-panel="missionsPanel">🎯 Missions</button>
+    <button data-panel="bankPanel">🏦 Bank & Wallets</button>
     <button data-panel="analyticsPanel">📈 Analytics</button>
     <button data-panel="databasePanel">🗄️ Database</button>
     <button data-panel="cashPanel">💸 Cash In / Cash Out</button>
@@ -92,6 +105,7 @@ footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
       <div class="dashstat"><small>🎮 Available games</small><strong>8</strong></div>
       <div class="dashstat"><small>👤 Account</small><strong style="font-size:15px" id="dashAccount">Player</strong></div>
     </div>
+    <div class="chartbox"><div class="charttitle">🎮 Game Lobby Overview</div><p class="dashmuted">Games available by category</p><div id="homeCategoryChart" class="bar-chart" role="img" aria-label="Games by category bar chart"></div></div>
     <p class="dashmuted" style="margin-top:14px">Choose a game below to start playing.</p>
   </section>
   <section class="dashpanel dashcontent" id="dashboardPanel" hidden>
@@ -112,15 +126,32 @@ footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
     <div class="dashstat"><small>Demo coin balance</small><strong id="coinBalance">0</strong></div>
     <p class="dashmuted">Coins are currently display-only. Purchases, transfers, and conversion to cash are disabled until a secure ledger and payment backend are configured.</p>
   </section>
+  <section class="dashpanel dashcontent" id="missionsPanel" hidden>
+    <h2 class="dashheading">🎯 Missions to Earn Points</h2><p class="dashmuted">Complete activities to qualify for points. Rewards are in preview mode until the secure rewards database and server verification are live.</p>
+    <div class="mission-list">
+      <article class="mission-card"><div><b>📺 Watch a rewarded ad</b><p class="dashmuted">Watch one full, eligible ad from an approved ad network.</p><small>Reward preview: +10 points</small></div><button class="dash-action" disabled>Ad provider not connected</button></article>
+      <article class="mission-card"><div><b>🎮 Play a game</b><p class="dashmuted">Play any game in the lobby and complete a verified session.</p><small>Reward preview: +5 points</small></div><button class="dash-action" disabled>Verification pending</button></article>
+      <article class="mission-card"><div><b>📅 Daily login</b><p class="dashmuted">Sign in once per day.</p><small>Reward preview: +2 points</small></div><button class="dash-action" disabled>Rewards system pending</button></article>
+    </div>
+    <div class="dashnotice">Important: points will only be credited after a trusted server verifies the mission. This prevents fake ad views, repeated claims, and browser-console cheating. No real cash value or withdrawals are enabled yet.</div>
+  </section>
   <section class="dashpanel dashcontent" id="bankPanel" hidden>
-    <h2 class="dashheading">Bank & Payment Linking</h2><p class="dashmuted">Planned payment methods: GCash, Maya, and Bank Transfer.</p>
-    <div class="dashgrid"><div class="dashstat"><small>GCash</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>Maya</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>Bank Transfer</small><strong style="font-size:17px">Planned</strong></div></div>
-    <div class="dashnotice">Payment linking is not active yet. Never enter your bank password, card PIN, or OTP on GAMEVERSE PH. Payment setup will use an authorized provider and secure server-side verification.</div>
+    <h2 class="dashheading">🏦 Banks, E-wallets & Coin Wallets</h2><p class="dashmuted">These are planned player payment choices. Selecting a logo here does not connect an account or move money yet.</p>
+    <h3>Popular Philippine e-wallets</h3><div class="dashgrid">
+      <div class="dashstat"><small>GCash</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>Maya</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>GoTyme</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>GrabPay</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>ShopeePay</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>Coins.ph</small><strong style="font-size:17px">Planned</strong></div>
+    </div>
+    <h3>Philippine banks</h3><div class="dashgrid">
+      <div class="dashstat"><small>BPI</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>BDO</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>Metrobank</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>UnionBank</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>LandBank</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>PNB</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>Security Bank</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>RCBC</small><strong style="font-size:17px">Planned</strong></div>
+    </div>
+    <h3>Digital asset wallets</h3><div class="dashgrid"><div class="dashstat"><small>Coins.ph Crypto</small><strong style="font-size:17px">Planned</strong></div><div class="dashstat"><small>PDAX</small><strong style="font-size:17px">Planned</strong></div></div>
+    <div class="dashnotice">Secure connection will be handled through each provider's approved API or payment gateway where available. GAMEVERSE PH will never ask for bank passwords, wallet recovery phrases, private keys, card PINs, or OTPs. Crypto deposits/withdrawals require separate compliance and security review.</div>
   </section>
   <section class="dashpanel dashcontent" id="analyticsPanel" hidden>
-    <h2 class="dashheading">Player Analytics</h2><p class="dashmuted">A basic overview from this browser only.</p>
-    <div class="dashgrid"><div class="dashstat"><small>Practice points</small><strong id="analyticsPoints">0</strong></div><div class="dashstat"><small>Games available</small><strong>8</strong></div></div>
-    <p class="dashmuted">Cross-device play statistics and verified reward analytics require a connected database.</p>
+    <h2 class="dashheading">📈 Player Analytics</h2><p class="dashmuted">Live catalogue statistics plus your current browser-only practice score.</p>
+    <div class="dashgrid"><div class="dashstat"><small>Practice points</small><strong id="analyticsPoints">0</strong></div><div class="dashstat"><small>Games available</small><strong>8</strong></div><div class="dashstat"><small>Game categories</small><strong>4</strong></div></div>
+    <div class="chartbox"><div class="charttitle">Games by category</div><div id="analyticsCategoryChart" class="bar-chart" role="img" aria-label="Game categories bar chart"></div></div>
+    <div class="chartbox"><div class="charttitle">Player activity & points</div><p class="dashmuted">No verified activity records yet. This chart will populate after the server-side player analytics database is connected.</p><div class="empty-chart">Waiting for verified player data</div></div>
+    <p class="dashmuted">Browser-only scores are not reliable financial records. Cross-device play statistics and verified reward analytics require a secure database.</p>
   </section>
   <section class="dashpanel dashcontent" id="databasePanel" hidden>
     <h2 class="dashheading">Database Status</h2><p class="dashmuted">Firebase Authentication is used for account sign-in.</p>
@@ -170,6 +201,12 @@ $("points").textContent=getPoints();
 
 const dashNav=document.getElementById("dashNav");
 if(dashNav){dashNav.querySelectorAll("button[data-panel]").forEach(btn=>btn.addEventListener("click",()=>{dashNav.querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===btn));document.querySelectorAll(".dashcontent").forEach(p=>p.hidden=p.id!==btn.dataset.panel)}))}
+function renderCategoryChart(targetId){
+ const target=document.getElementById(targetId);if(!target)return;
+ const data=[["Arcade",2],["Puzzle",2],["Strategy",2],["Challenge",2]];
+ target.innerHTML=data.map(([label,value])=>'<div class="bar-col"><span class="bar-value">'+value+'</span><div class="bar-track"><div class="bar-fill" style="height:'+(value/2*100)+'%"></div></div><span class="bar-label">'+label+'</span></div>').join("");
+}
+renderCategoryChart("homeCategoryChart");renderCategoryChart("analyticsCategoryChart");
 function refreshDashboard(){const p=getPoints();["dashPoints","overviewPoints","pointsBalance","analyticsPoints"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=p.toLocaleString()});const c=document.getElementById("dashCoins");if(c)c.textContent="0";const cb=document.getElementById("coinBalance");if(cb)cb.textContent="0";const user=auth.currentUser;const account=document.getElementById("dashAccount");if(account)account.textContent=user?(user.displayName||user.email||"Player"):"Player"}
 window.addEventListener("storage",refreshDashboard);refreshDashboard();
 
