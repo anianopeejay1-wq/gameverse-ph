@@ -32,7 +32,7 @@ footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
 
 /* GAMEVERSE PH member dashboard */
 .dashboard-shell{max-width:1200px;margin:0 auto;padding:20px 18px}
-.dashnav{display:flex;gap:8px;overflow-x:auto;padding:4px 0 14px;scrollbar-width:thin}
+.dashnav{display:flex;gap:8px;flex-wrap:wrap;overflow:visible;padding:4px 0 14px;scrollbar-width:thin}
 .dashnav button{white-space:nowrap;background:#17172a;color:#d9d9e8;border:1px solid #363650;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}
 .dashnav button.active{background:#00ff88;color:#06130c;border-color:#00ff88}
 .dashpanel{background:linear-gradient(145deg,#19192e,#111120);border:1px solid #34344e;border-radius:16px;padding:18px;margin:8px 0 18px}
@@ -72,6 +72,7 @@ footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
 <section class="hero"><h1>PLAY. <span>EARN.</span> DOMINATE.</h1><p>Your Pinoy Gaming Hub — eight games, one lobby.</p><a class="btn" href="#games">▶ ENTER GAME LOBBY</a></section>
 
 <section class="dashboard-shell" aria-label="Player dashboard">
+  <h2 style="margin:0 0 10px;color:#00ff88">👤 PLAYER MENU</h2>
   <nav class="dashnav" id="dashNav" aria-label="Main navigation">
     <button class="active" data-panel="homePanel">🏠 Home</button>
     <button data-panel="dashboardPanel">📊 Dashboard</button>
