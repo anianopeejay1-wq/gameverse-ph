@@ -20,6 +20,7 @@ h1{font-size:clamp(22px,4vw,34px);margin:8px 0;color:#f1d49b}.sub{color:#aeb8c1;
 @media(max-width:560px){main{padding:9px}.toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{font-size:12px;padding:7px 9px}#view{height:55vh;min-height:310px}}
 </style><script>document.documentElement.classList.add("gv-auth-check");</script>
 <style>html.gv-auth-check body{visibility:hidden!important}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -38,6 +39,7 @@ onAuthStateChanged(auth,user=>{if(user){document.documentElement.classList.remov
 <div class="stat">☠️ Defeated <span id="kills">0</span></div>
 <div class="stat">🛡️ Defenses <span id="built">0</span></div>
 <div class="stat">⚔️ Guards <span id="guards">0</span></div>
+<div class="stat">🧍 Warrior Stamina <span id="playerStamina">100</span>%</div>
 </div>
 <div id="gamebox"><canvas id="view"></canvas><div id="hint">Drag to rotate camera · Pinch/scroll to zoom · Tap a green pad to build</div></div>
 <div id="message" role="status">Choose a defense, then tap a glowing build pad. Start the first wave when ready.</div>
@@ -49,6 +51,8 @@ onAuthStateChanged(auth,user=>{if(user){document.documentElement.classList.remov
 <button class="btn" id="repair">❤️ Repair · 30</button>
 <button class="btn" id="soldier">🛡️ Deploy Guard · 55</button>
 <button class="btn" id="fire">🎯 Fire Cannon</button>
+<button class="btn" id="cameraMode">👁️ Third-Person</button>
+<button class="btn" id="moveLeft">⬅ Move</button><button class="btn" id="moveRight">Move ➡</button><button class="btn" id="playerAttack">⚔️ Player Attack</button>
 <button class="btn" id="start">⚔️ Start Wave</button>
 <button class="btn" id="restart">↻ Restart</button>
 </div>
@@ -56,9 +60,11 @@ onAuthStateChanged(auth,user=>{if(user){document.documentElement.classList.remov
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 const $=id=>document.getElementById(id),canvas=$('view');
 let scene,camera,renderer,clock,raycaster,mouse,ground,castle,selected=null,buildings=[],enemies=[],bolts=[],effects=[];
 let hp=100,maxHp=100,gold=150,wave=0,kills=0,spawning=false,spawnLeft=0,spawnClock=0,gameOver=false,cleared=true,frame=0,guards=[],manualCooldown=0;
+let player=null,playerMixer=null,playerActions={},playerMode='third',playerHP=100,playerStamina=100,playerAttackCooldown=0,playerFallback=false;
 const pads=[[-8,-7],[-3,-7],[2,-7],[7,-7],[-8,7],[-3,7],[2,7],[7,7]];
 const prices={archer:40,cannon:70,wall:30};
 const mats={stone:new THREE.MeshStandardMaterial({color:0x858b8c,roughness:0.92}),dark:new THREE.MeshStandardMaterial({color:0x414b50,roughness:1}),roof:new THREE.MeshStandardMaterial({color:0x55443a,roughness:0.9}),gold:new THREE.MeshStandardMaterial({color:0xc99b52,metalness:.45,roughness:.5}),grass:new THREE.MeshStandardMaterial({color:0x425b43,roughness:1}),road:new THREE.MeshStandardMaterial({color:0x89775e,roughness:1}),red:new THREE.MeshStandardMaterial({color:0x9d3530,roughness:.8}),steel:new THREE.MeshStandardMaterial({color:0x9caeb9,metalness:.65,roughness:.4})};
@@ -73,10 +79,18 @@ for(const [x,z] of [[-15.3,-2.3],[-10.7,-2.3],[-15.3,2.3],[-10.7,2.3]]){cylinder
 box(1.8,2.5,.25,mats.dark,-13,1.25,2.53,g);box(1.3,1.9,.15,mats.gold,-13,1,2.59,g);
 for(let x=-15;x<=-11;x+=1)box(.35,.55,.4,mats.dark,x,3.65,-2.7,g);
 return g}
+function createPlayer(){
+ const loader=new GLTFLoader();
+ loader.load('https://threejs.org/examples/models/gltf/Soldier.glb',g=>{if(!scene)return;player=g.scene;player.scale.setScalar(1.65);player.position.set(-7,0,0);player.rotation.y=Math.PI/2;player.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});scene.add(player);playerMixer=new THREE.AnimationMixer(player);for(const clip of g.animations){const a=playerMixer.clipAction(clip);playerActions[clip.name]=a}const idle=playerActions['Idle'];if(idle)idle.play();},undefined,()=>{playerFallback=true;const g=new THREE.Group();const armor=new THREE.MeshStandardMaterial({color:0x526b7a,metalness:.45,roughness:.5}),skin=new THREE.MeshStandardMaterial({color:0xc28e6c,roughness:.8}),cloth=new THREE.MeshStandardMaterial({color:0x293746,roughness:1}),goldTrim=new THREE.MeshStandardMaterial({color:0xc99b52,metalness:.5});const part=(geo,mat,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;g.add(m);return m};part(new THREE.CapsuleGeometry(.34,.65,5,8),armor,0,1.05,0);part(new THREE.SphereGeometry(.25,12,10),skin,0,1.72,0);part(new THREE.BoxGeometry(.5,.12,.08),goldTrim,0,1.78,.22);for(const x of [-.18,.18]){part(new THREE.CapsuleGeometry(.12,.58,4,7),cloth,x,.38,0);part(new THREE.CapsuleGeometry(.11,.52,4,7),armor,x,.95,0)}part(new THREE.CapsuleGeometry(.11,.58,4,7),armor,-.43,1.12,0);part(new THREE.CapsuleGeometry(.11,.58,4,7),armor,.43,1.12,0);part(new THREE.BoxGeometry(.12,.8,.12),goldTrim,.55,.9,.05);g.position.set(-7,0,0);g.rotation.y=Math.PI/2;scene.add(g);player=g;});
+}
+function setPlayerAnimation(name){if(!playerMixer)return;const next=playerActions[name];if(!next)return;for(const [key,a] of Object.entries(playerActions)){if(key!==name&&a.isRunning())a.fadeOut(.15)}next.reset().fadeIn(.15).play()}
+function movePlayer(dir){if(!player||gameOver||playerStamina<5)return;player.position.x=Math.max(-9,Math.min(7,player.position.x+dir*1.35));player.rotation.y=dir>0?Math.PI/2:-Math.PI/2;playerStamina=Math.max(0,playerStamina-5);setPlayerAnimation('Run');setTimeout(()=>{if(player&&playerActions['Idle'])setPlayerAnimation('Idle')},350);$('playerStamina').textContent=Math.ceil(playerStamina)}
+function playerAttack(){if(!player||gameOver||playerAttackCooldown>0)return;playerAttackCooldown=.65;setPlayerAnimation('TPose');let target=null,dist=3.8;for(const e of enemies){const d=Math.abs(e.mesh.position.x-player.position.x);if(d<dist){dist=d;target=e}}if(target){hitEnemy(target,playerFallback?2:3);say('Your warrior struck an enemy troop!')}else say('No enemy in melee range — move closer to the advancing troops.');}
 function init(){scene=new THREE.Scene();scene.background=new THREE.Color(0x9baeb4);scene.fog=new THREE.Fog(0x9baeb4,32,75);camera=new THREE.PerspectiveCamera(48,1,.1,120);camera.position.set(13,19,27);camera.lookAt(-3,0,0);
 renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
 scene.add(new THREE.HemisphereLight(0xdcecff,0x34402c,2));const sun=new THREE.DirectionalLight(0xffe1b2,3);sun.position.set(-8,22,12);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
 box(100,.5,100,mats.grass,0,-.35,0);box(48,.04,5,mats.road,4,-.06,0);castle=buildCastle();
+createPlayer();
 for(let i=0;i<18;i++){const x=-22+Math.random()*42,z=(Math.random()-.5)*28;if(x>-10&&Math.abs(z)<5)continue;const trunk=cylinder(.12,.2,1.2,mats.dark,x,.6,z);const crown=new THREE.Mesh(new THREE.ConeGeometry(.85,2.4,7),new THREE.MeshStandardMaterial({color:0x294a36,roughness:1}));crown.position.set(x,2.2,z);crown.castShadow=true;scene.add(crown)}
 pads.forEach(([x,z])=>{const p=cylinder(.78,.78,.16,new THREE.MeshStandardMaterial({color:0x69a76c,emissive:0x153b1b}),x,.05,z);p.userData.pad={x,z};});
 raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();clock=new THREE.Clock();resize();window.addEventListener('resize',resize);canvas.addEventListener('pointerdown',onTap);setupCamera();renderer.setAnimationLoop(animate)}
@@ -94,7 +108,7 @@ function projectile(from,target,type){const mesh=new THREE.Mesh(new THREE.Sphere
 function hitEnemy(e,dmg){e.hp-=dmg;if(e.hp<=0){gold+=e.boss?100:12;kills++;scene.remove(e.mesh);enemies=enemies.filter(x=>x!==e);if(e.boss)say('Boss defeated! The enemy commander is down.')}}
 function deployGuard(){if(gameOver)return;if(gold<55)return say('Deploying a guard costs 55 gold.');gold-=55;const g=new THREE.Group();cylinder(.25,.3,.9,mats.steel,0,.65,0,g);cylinder(.2,.2,.3,mats.gold,0,1.25,0,g);box(.08,.8,.08,mats.dark,.35,.9,0,g);g.position.set(-8,0,(Math.random()-.5)*3);scene.add(g);guards.push({mesh:g,hp:5,cool:0});updateHud();say('Guard deployed! Your soldier will defend the castle automatically.')}
 function fireCommandCannon(){if(gameOver)return;if(manualCooldown>0)return say('Command cannon reloading.');if(!enemies.length)return say('No enemy in range. Wait for the attackers.');const target=enemies.reduce((a,b)=>a.mesh.position.x>b.mesh.position.x?a:b);const p=target.mesh.position.clone();for(const e of [...enemies])if(e.mesh.position.distanceTo(p)<4)hitEnemy(e,5);const blast=new THREE.Mesh(new THREE.SphereGeometry(1.1,12,8),new THREE.MeshBasicMaterial({color:0xffa33c,transparent:true,opacity:.55}));blast.position.copy(p).add(new THREE.Vector3(0,1,0));scene.add(blast);effects.push({mesh:blast,life:.28});manualCooldown=2.8;say('BOOM! Command cannon fired — nearby enemies took damage.');updateHud()}
-function animate(){const dt=Math.min(clock.getDelta(),.04);frame+=dt;camera.position.set(-3+Math.sin(camAngle)*camRadius,camHeight,Math.cos(camAngle)*camRadius);camera.lookAt(-3,0,0);
+function animate(){const dt=Math.min(clock.getDelta(),.04);frame+=dt;if(playerMixer)playerMixer.update(dt);playerAttackCooldown=Math.max(0,playerAttackCooldown-dt);playerStamina=Math.min(100,playerStamina+dt*4);$('playerStamina').textContent=Math.ceil(playerStamina);if(player){if(playerMode==='first'){camera.position.set(player.position.x+.15,player.position.y+1.58,player.position.z);camera.lookAt(player.position.x+10,player.position.y+1.45,player.position.z)}else{camera.position.set(player.position.x-7+Math.sin(camAngle)*camRadius*.48,camHeight*.72,player.position.z+Math.cos(camAngle)*camRadius*.48);camera.lookAt(player.position.x+2,0,player.position.z)}}else{camera.position.set(-3+Math.sin(camAngle)*camRadius,camHeight,Math.cos(camAngle)*camRadius);camera.lookAt(-3,0,0)}
 if(!gameOver){manualCooldown=Math.max(0,manualCooldown-dt);$('fire').textContent=manualCooldown>0?'⏳ Reloading…':'🎯 Fire Cannon';if(spawning){spawnClock+=dt;if(spawnClock>1.05&&spawnLeft>0){spawn();spawnLeft--;spawnClock=0}if(spawnLeft===0)spawning=false}
 for(const g of guards){g.cool-=dt;const target=enemies.find(e=>e.mesh.position.x<-5&&Math.abs(e.mesh.position.z-g.mesh.position.z)<3);if(target){if(g.cool<=0){hitEnemy(target,1);g.cool=.75}if(!enemies.includes(target))continue}else if(g.mesh.position.x<-8)g.mesh.position.x+=.15*dt;}
 for(const e of [...enemies]){let slowed=false;for(const g of guards){if(Math.abs(e.mesh.position.x-g.mesh.position.x)<1.1&&Math.abs(e.mesh.position.z-g.mesh.position.z)<1.5){slowed=true;break}}e.mesh.position.x-=e.speed*dt*(slowed?.35:1);if(e.mesh.position.x<-10.1){scene.remove(e.mesh);enemies=enemies.filter(x=>x!==e);const wallCount=buildings.filter(b=>b.type==='wall').length;hp-=Math.max(3,10-Math.min(6,wallCount));}}
@@ -106,6 +120,7 @@ if(!spawning&&enemies.length===0&&!cleared&&wave>0&&!gameOver){cleared=true;gold
 if(wave>=10&&cleared)$('start').disabled=true;updateHud()}
 renderer.render(scene,camera)}
 function restart(){location.reload()}
+$('cameraMode').onclick=()=>{playerMode=playerMode==='third'?'first':'third';$('cameraMode').textContent=playerMode==='first'?'👁️ First-Person':'👁️ Third-Person';say('Camera switched to '+(playerMode==='first'?'First-Person':'Third-Person')+'.')};$('moveLeft').onclick=()=>movePlayer(-1);$('moveRight').onclick=()=>movePlayer(1);$('playerAttack').onclick=playerAttack;document.addEventListener('keydown',e=>{if(['ArrowLeft','a','A'].includes(e.key))movePlayer(-1);if(['ArrowRight','d','D'].includes(e.key))movePlayer(1);if(e.key===' '||e.key==='Enter')playerAttack()});
 $('archer').onclick=()=>choose('archer');$('cannon').onclick=()=>choose('cannon');$('wall').onclick=()=>choose('wall');
 $('upgrade').onclick=()=>{if(gold<90)return say('Upgrade costs 90 gold.');gold-=90;maxHp+=35;hp=Math.min(maxHp,hp+35);updateHud();say('Castle upgraded! +35 maximum health.')};
 $('repair').onclick=()=>{if(hp>=maxHp)return say('Castle health is already full.');if(gold<30)return say('Repair costs 30 gold.');gold-=30;hp=Math.min(maxHp,hp+35);updateHud();say('Castle repaired by up to 35 health.')};
