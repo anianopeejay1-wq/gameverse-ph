@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#090914"><title>Castle Defense | GAMEVERSE PH</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090914;color:#fff;font:16px Arial,sans-serif;padding:14px}
+header,.wrap{max-width:900px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+a,.btn{background:#00ef88;color:#06130c;border:0;border-radius:9px;padding:10px 14px;font-weight:800;text-decoration:none;cursor:pointer}
+h1{color:#00ef88;margin:8px 0}.panel{background:#17172a;border:1px solid #30304a;border-radius:15px;padding:15px;margin:12px 0}
+.hud{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between}.stat{background:#24243d;padding:9px 12px;border-radius:9px;font-weight:bold}
+canvas{display:block;width:100%;height:auto;background:#111a2b;border:2px solid #536078;border-radius:12px;touch-action:manipulation}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.controls button{flex:1;min-width:120px}.muted{color:#aaa;line-height:1.5;font-size:14px}
+#message{min-height:24px;color:#ffe08a;margin-top:10px}.small{font-size:12px;color:#aaa}
+button:disabled{opacity:.45;cursor:not-allowed}
+</style></head><body>
+<header><b style="color:#00ef88;font-size:21px">🏰 CASTLE DEFENSE</b><a href="../index.html">← Game Lobby</a></header>
+<main class="wrap">
+<section class="panel"><h1>Kingdom War</h1><p class="muted">Build defensive towers, protect your castle, and survive every enemy wave. Tap an empty build pad after selecting Build Tower.</p>
+<div class="hud"><div class="stat">❤️ Castle: <span id="hp">100</span></div><div class="stat">🪙 Gold: <span id="gold">100</span></div><div class="stat">🌊 Wave: <span id="wave">0</span></div><div class="stat">☠️ Defeated: <span id="kills">0</span></div></div>
+</section>
+<section class="panel">
+<canvas id="field" width="720" height="390" aria-label="Castle defense game board"></canvas>
+<div class="controls">
+<button class="btn" id="build">🛠 Build Tower (35)</button>
+<button class="btn" id="repair" style="background:#ffd65b">🧱 Repair Castle (25)</button>
+<button class="btn" id="waveBtn" style="background:#79b7ff">⚔ Start Wave</button>
+<button class="btn" id="restart" style="background:#aaa">Restart</button>
+</div>
+<div id="message" role="status">Prepare your defenses. Build towers, then start the first wave!</div>
+<p class="small">Controls: choose Build Tower, then tap one of the glowing pads. Towers automatically attack enemies in range. Defeating enemies earns gold.</p>
+</section>
+</main>
+<script>
+const canvas=document.getElementById('field'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+const pads=[{x:205,y:105},{x:315,y:105},{x:425,y:105},{x:205,y:285},{x:315,y:285},{x:425,y:285}];
+let hp,gold,wave,kills,towers,enemies,shots,selected,spawning,spawnLeft,lastSpawn,gameOver,raf,lastTime;
+function reset(){cancelAnimationFrame(raf);hp=100;gold=100;wave=0;kills=0;towers=[];enemies=[];shots=[];selected=false;spawning=false;spawnLeft=0;lastSpawn=0;gameOver=false;lastTime=0;$('message').textContent='Prepare your defenses. Build towers, then start the first wave!';$('build').disabled=false;$('waveBtn').disabled=false;hud();draw();raf=requestAnimationFrame(loop)}
+function hud(){$('hp').textContent=Math.max(0,hp);$('gold').textContent=gold;$('wave').textContent=wave;$('kills').textContent=kills}
+function say(t){$('message').textContent=t}
+function startWave(){if(gameOver||spawning||enemies.length)return;wave++;spawnLeft=5+wave*2;spawning=true;lastSpawn=0;$('waveBtn').disabled=true;say('Wave '+wave+' is attacking! Defend your castle!');hud()}
+function build(){if(gameOver)return;if(selected){selected=false;$('build').textContent='🛠 Build Tower (35)';say('Build selection cancelled.')}else if(gold<35){say('Not enough gold! Defeat enemies to earn more.')}else{selected=true;$('build').textContent='Tap a build pad';say('Choose an empty glowing pad on the battlefield.')}draw()}
+function placeTower(p){if(!selected)return;if(towers.some(t=>t.x===p.x&&t.y===p.y)){say('There is already a tower on that pad.');return}if(gold<35){say('Not enough gold!');return}gold-=35;towers.push({x:p.x,y:p.y,cool:0,level:1});selected=false;$('build').textContent='🛠 Build Tower (35)';say('Tower built! It will automatically fire at enemies in range.');hud();draw()}
+function repair(){if(gameOver)return;if(hp>=100){say('Your castle is already at full health.');return}if(gold<25){say('You need 25 gold to repair.');return}gold-=25;hp=Math.min(100,hp+30);say('Castle repaired by 30 health.');hud();draw()}
+function spawnEnemy(){const tough=wave>=3&&Math.random()<.25;enemies.push({x:690,y:195+(Math.random()-.5)*110,hp:tough?4:2,max:tough?4:2,speed:(tough?21:29)+wave*2,r:tough?16:12})}
+function loop(ts){if(!lastTime)lastTime=ts;let dt=Math.min((ts-lastTime)/1000,.04);lastTime=ts;if(!gameOver){if(spawning){lastSpawn+=dt;if(lastSpawn>=1.15&&spawnLeft>0){spawnEnemy();spawnLeft--;lastSpawn=0}if(spawnLeft===0){spawning=false;if(enemies.length===0)waveDone()}}
+for(const e of enemies){e.x-=e.speed*dt;if(e.x<85){e.leaked=true;hp-=e.max*5}}
+enemies=enemies.filter(e=>!e.leaked&&e.hp>0);
+for(const t of towers){t.cool-=dt;if(t.cool<=0){let target=null,dist=145;for(const e of enemies){let d=Math.hypot(e.x-t.x,e.y-t.y);if(d<dist){dist=d;target=e}}if(target){shots.push({x:t.x,y:t.y,target,speed:300,damage:1});t.cool=.62}}}
+for(const s of shots){if(!s.target||s.target.hp<=0){s.dead=true;continue}let dx=s.target.x-s.x,dy=s.target.y-s.y,d=Math.hypot(dx,dy),step=s.speed*dt;if(d<=step){s.target.hp-=s.damage;s.dead=true;if(s.target.hp<=0){kills++;gold+=10}}else{s.x+=dx/d*step;s.y+=dy/d*step}}
+shots=shots.filter(s=>!s.dead);if(hp<=0){hp=0;gameOver=true;spawning=false;$('waveBtn').disabled=true;$('build').disabled=true;say('Your castle has fallen! Press Restart to defend the kingdom again.')}if(!spawning&&enemies.length===0&&!gameOver&&wave>0)waveDone();hud()}draw();raf=requestAnimationFrame(loop)}
+function waveDone(){if(wave>0&&!spawning&&enemies.length===0){spawning=false;$('waveBtn').disabled=false;say('Wave '+wave+' cleared! You earned a 20-gold victory bonus. Prepare for the next attack.');gold+=20;hud();wave=wave;}}
+function draw(){ctx.clearRect(0,0,720,390);ctx.fillStyle='#18263a';ctx.fillRect(0,0,720,390);ctx.fillStyle='#25364a';for(let i=0;i<720;i+=48)for(let j=0;j<390;j+=48){ctx.strokeStyle='#31445a';ctx.strokeRect(i,j,48,48)}
+ctx.fillStyle='#6d543d';ctx.fillRect(70,160,650,70);ctx.fillStyle='#98764b';ctx.fillRect(70,182,650,26);
+ctx.fillStyle='#9a9aaf';ctx.fillRect(18,125,76,145);ctx.fillStyle='#c8c8d4';ctx.fillRect(28,105,18,35);ctx.fillRect(66,105,18,35);ctx.fillStyle='#d7b65c';ctx.fillRect(44,215,25,55);ctx.fillStyle='#ffdf79';ctx.fillRect(48,145,15,15);ctx.fillStyle='#e8e8f0';ctx.font='bold 14px Arial';ctx.fillText('YOUR CASTLE',12,294);
+for(const p of pads){const built=towers.find(t=>t.x===p.x&&t.y===p.y);ctx.beginPath();ctx.arc(p.x,p.y,26,0,Math.PI*2);ctx.fillStyle=built?'#53616d':selected?'#315f4c':'#283a4d';ctx.fill();ctx.strokeStyle=selected?'#00ff88':'#8393a5';ctx.lineWidth=2;ctx.stroke();if(built){ctx.fillStyle='#b8c7d8';ctx.fillRect(p.x-10,p.y-12,20,26);ctx.fillStyle='#00ff88';ctx.fillRect(p.x-4,p.y-20,8,10);ctx.fillStyle='#fff';ctx.font='11px Arial';ctx.fillText('T'+built.level,p.x-7,p.y+4)}else{ctx.fillStyle='#cbd5e1';ctx.font='bold 20px Arial';ctx.fillText('+',p.x-6,p.y+7)}}
+for(const e of enemies){ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fillStyle='#c64d58';ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(e.x-5,e.y-4,3,3);ctx.fillRect(e.x+3,e.y-4,3,3);ctx.fillStyle='#391b27';ctx.fillRect(e.x-15,e.y-e.r-9,30,4);ctx.fillStyle='#ff5555';ctx.fillRect(e.x-15,e.y-e.r-9,30*(e.hp/e.max),4)}
+ctx.strokeStyle='#ffe36b';ctx.lineWidth=3;for(const s of shots){ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-5,s.y);ctx.stroke()}
+if(gameOver){ctx.fillStyle='#000b';ctx.fillRect(0,0,720,390);ctx.fillStyle='#fff';ctx.font='bold 34px Arial';ctx.textAlign='center';ctx.fillText('CASTLE DESTROYED',360,190);ctx.textAlign='left'}
+}
+canvas.addEventListener('click',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*720/r.width,y=(e.clientY-r.top)*390/r.height;const p=pads.find(p=>Math.hypot(p.x-x,p.y-y)<30);if(p){if(selected)placeTower(p);else say('Select Build Tower first, then tap a build pad.')}});
+$('build').onclick=build;$('repair').onclick=repair;$('waveBtn').onclick=startWave;$('restart').onclick=reset;reset();
+</script></body></html>
