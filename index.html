@@ -1,71 +1,107 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#00ff88"><meta name="description" content="GAMEVERSE PH — Pinoy Gaming Hub. Play free mini-games.">
-<link rel="manifest" href="manifest.json"><title>GAMEVERSE PH — Play. Earn. Dominate.</title>
+<meta name="theme-color" content="#00ff88">
+<title>GAMEVERSE PH — Play. Earn. Dominate.</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#090914;color:#fff;font-family:Arial,sans-serif}
 header{display:flex;justify-content:space-between;align-items:center;padding:16px 5%;background:#111126;position:sticky;top:0;z-index:5;border-bottom:1px solid #282843}
 .logo{font-size:25px;font-weight:900;color:#00ff88}.logo span{color:#fff}
 .btn{background:#00ff88;color:#06130c;border:0;border-radius:9px;padding:11px 16px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
+.btn:disabled{opacity:.6;cursor:not-allowed}
 .hero{text-align:center;padding:55px 18px 42px;background:radial-gradient(ellipse at top,#22234c,#090914 70%)}
-.hero h1{font-size:clamp(34px,7vw,58px);margin:0}.hero h1 span{color:#00ff88}.hero p{color:#bbb;margin:14px 0 22px}
-.wrap{max-width:1100px;margin:auto;padding:22px 18px}.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:18px}
+.hero h1{font-size:clamp(34px,7vw,58px);margin:0;line-height:1.05}.hero h1 span{color:#00ff88}.hero p{color:#bbb;margin:14px 0 22px}
+.wrap{max-width:1100px;margin:auto;padding:22px 18px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:18px}
 .filters{display:flex;gap:8px;flex-wrap:wrap}.filter{background:#202039;color:#ddd;border:1px solid #3b3b58;padding:9px 13px;border-radius:20px;cursor:pointer}.filter.active{background:#00ff88;color:#06130c;border-color:#00ff88}
 .games{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
 .card{background:#17172a;border:1px solid #30304a;border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
 .art{height:130px;display:grid;place-items:center;font-size:55px;background:linear-gradient(135deg,#1b3d39,#25254b)}
-.cardbody{padding:16px;display:flex;flex-direction:column;flex:1}.tag{font-size:11px;color:#00ff88;text-transform:uppercase;font-weight:800}.card h2{margin:8px 0}.card p{color:#aaa;font-size:14px;line-height:1.45;flex:1}.card .btn{text-align:center}
+.cardbody{padding:16px;display:flex;flex-direction:column;flex:1}
+.tag{font-size:11px;color:#00ff88;text-transform:uppercase;font-weight:800}
+.card h2{margin:8px 0;font-size:20px;line-height:1.2;word-break:break-word}
+.card p{color:#aaa;font-size:14px;line-height:1.45;flex:1}
+.card .btn{text-align:center}
 .status{color:#9aa;padding:10px 0}.wallet{background:#17172a;border:1px solid #30304a;border-radius:12px;padding:12px 16px}
+.warn{display:none;background:#3a2a00;border:1px solid #ffcc80;color:#ffcc80;padding:12px 16px;border-radius:10px;margin:14px 18px 0;text-align:center;font-size:14px}
+.warn b{color:#fff}
 footer{text-align:center;color:#888;padding:30px 15px;font-size:13px}
 @media(max-width:520px){header{padding:13px}.logo{font-size:20px}.hero{padding-top:40px}}
 </style></head><body>
 <header><div class="logo">GAME<span>VERSE</span> PH</div><button class="btn" id="loginBtn">Login / Sign up</button></header>
-<section class="hero"><h1>PLAY. <span>EARN.</span> DOMINATE.</h1><p>Your Pinoy Gaming Hub — eight games, one lobby.</p><a class="btn" href="#games">▶ PLAY NOW</a></section>
+<div class="warn" id="inAppWarn">⚠️ Nasa Messenger / Facebook ka. Baka mag-error ang Login. <b>Tap mo dito para buksan sa Chrome →</b> <button class="btn" id="openChrome" style="margin-left:8px;padding:8px 12px">Open in Chrome</button></div>
+<section class="hero"><h1>PLAY. <span>EARN.</span> DOMINATE.</h1><p>Your Pinoy Gaming Hub — seven games, one lobby.</p><a class="btn" href="#games">▶ PLAY NOW</a></section>
 
 <div id="authModal" style="display:none;position:fixed;inset:0;background:#000b;z-index:20;align-items:center;justify-content:center;padding:18px">
- <div style="width:min(100%,420px);background:#17172a;border:1px solid #444;border-radius:16px;padding:22px;position:relative">
-  <button id="closeAuth" aria-label="Close" style="position:absolute;right:14px;top:12px;background:none;border:0;color:#fff;font-size:24px">×</button>
-  <h2 id="authTitle" style="margin:0 0 8px;color:#00ff88">Create your account</h2>
-  <p style="color:#aaa;font-size:14px;margin:0 0 16px">Join GAMEVERSE PH and save your player account.</p>
-  <form id="authForm">
-   <label style="display:block;margin:10px 0 5px">Display name</label><input id="authName" autocomplete="name" placeholder="Your player name" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
-   <label style="display:block;margin:10px 0 5px">Email address</label><input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
-   <label style="display:block;margin:10px 0 5px">Password</label><input id="authPassword" type="password" autocomplete="new-password" required minlength="6" placeholder="At least 6 characters" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
-   <button class="btn" id="authSubmit" type="submit" style="width:100%;margin-top:16px">Create Account</button>
-  </form>
-  <button id="googleBtn" class="btn" style="width:100%;margin-top:10px;background:#fff;color:#222">Continue with Google</button>
-  <p id="authMessage" role="status" style="color:#ffcc80;font-size:13px;min-height:18px"></p>
-  <p style="font-size:14px;color:#bbb;text-align:center"><span id="switchPrompt">Already have an account?</span> <button id="switchAuth" style="background:none;border:0;color:#00ff88;text-decoration:underline;cursor:pointer">Log in</button></p>
-  <button id="forgotPassword" style="display:block;margin:0 auto;background:none;border:0;color:#aaa;text-decoration:underline;cursor:pointer">Forgot password?</button>
- </div>
-</div>
+<div style="width:min(100%,420px);background:#17172a;border:1px solid #444;border-radius:16px;padding:22px;position:relative">
+<button id="closeAuth" style="position:absolute;right:14px;top:12px;background:none;border:0;color:#fff;font-size:24px">×</button>
+<h2 id="authTitle" style="margin:0 0 8px;color:#00ff88">Create your account</h2>
+<p style="color:#aaa;font-size:14px;margin:0 0 16px">Join GAMEVERSE PH and save your player account.</p>
+<form id="authForm">
+<label style="display:block;margin:10px 0 5px">Display name</label><input id="authName" placeholder="Your player name" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
+<label style="display:block;margin:10px 0 5px">Email address</label><input id="authEmail" type="email" required placeholder="you@example.com" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
+<label style="display:block;margin:10px 0 5px">Password</label><input id="authPassword" type="password" required minlength="6" placeholder="At least 6 characters" style="width:100%;padding:12px;border-radius:8px;border:1px solid #555;background:#090914;color:#fff">
+<button class="btn" id="authSubmit" type="submit" style="width:100%;margin-top:16px">Create Account</button>
+</form>
+<button id="googleBtn" class="btn" style="width:100%;margin-top:10px;background:#fff;color:#222">Continue with Google</button>
+<p id="authMessage" style="color:#ffcc80;font-size:13px;min-height:18px"></p>
+<p style="font-size:14px;color:#bbb;text-align:center"><span id="switchPrompt">Already have an account?</span> <button id="switchAuth" style="background:none;border:0;color:#00ff88;text-decoration:underline;cursor:pointer">Log in</button></p>
+<button id="forgotPassword" style="display:block;margin:0 auto;background:none;border:0;color:#aaa;text-decoration:underline;cursor:pointer">Forgot password?</button>
+</div></div>
+
 <main class="wrap">
 <div class="bar"><div><h2 style="margin:0 0 5px">🎮 Game Lobby</h2><div class="status" id="status">Choose a game and start playing.</div></div><div class="wallet">⭐ Practice points: <b id="points">0</b></div></div>
-<div class="bar"><div class="filters" id="filters"><button class="filter active" data-filter="All">All Games</button><button class="filter" data-filter="Arcade">Arcade</button><button class="filter" data-filter="Puzzle">Puzzle</button><button class="filter" data-filter="Strategy">Strategy</button><button class="filter" data-filter="Challenge">Challenges</button></div></div>
+<div class="bar"><div class="filters" id="filters"><button class="filter active" data-filter="All">All Games</button><button class="filter" data-filter="Arcade">Arcade</button><button class="filter" data-filter="Puzzle">Puzzle</button><button class="filter" data-filter="Strategy">Strategy</button><button class="filter" data-filter="Challenge">Challenge</button></div><span id="gameCount" style="color:#9aa;font-size:13px"></span></div>
 <section class="games" id="games">
 <article class="card" data-category="Challenge"><div class="art">⚔️</div><div class="cardbody"><span class="tag">Action Adventure</span><h2>The Last Battalion</h2><p>Join Peejay Kurogane in 2147. Fight the Higop drones and defend Parañaque Sector.</p><a class="btn" href="games/the-last-battalion.html">START MISSION</a></div></article>
 <article class="card" data-category="Arcade"><div class="art">🐍</div><div class="cardbody"><span class="tag">Arcade</span><h2>Snake</h2><p>Eat, grow, and avoid hitting the walls or your own tail.</p><a class="btn" href="games/snake.html">PLAY SNAKE</a></div></article>
 <article class="card" data-category="Strategy"><div class="art">⭕</div><div class="cardbody"><span class="tag">Strategy</span><h2>Tic-Tac-Toe</h2><p>Challenge the CPU and line up three marks to win.</p><a class="btn" href="games/tic-tac-toe.html">PLAY NOW</a></div></article>
 <article class="card" data-category="Puzzle"><div class="art">🔢</div><div class="cardbody"><span class="tag">Puzzle</span><h2>2048</h2><p>Slide matching number tiles and reach the 2048 tile.</p><a class="btn" href="games/2048.html">PLAY 2048</a></div></article>
-<article class="card" data-category="Strategy"><div class="art">🏰</div><div class="cardbody"><span class="tag">Strategy / Tower Defense</span><h2>Castle Defense: Kingdom War</h2><p>Build towers, repair your castle, and survive waves of enemy attacks.</p><a class="btn" href="games/castle-defense.html">DEFEND THE CASTLE</a></div></article>
 <article class="card" data-category="Challenge"><div class="art">🐤</div><div class="cardbody"><span class="tag">Challenge</span><h2>Flappy Challenge</h2><p>Tap to fly through the pipes. How long can you last?</p><a class="btn" href="games/flappy-challenge.html">START CHALLENGE</a></div></article>
 <article class="card" data-category="Puzzle"><div class="art">🧠</div><div class="cardbody"><span class="tag">Puzzle</span><h2>Memory Match</h2><p>Flip cards, remember the icons, and find every pair.</p><a class="btn" href="games/memory-match.html">PLAY MEMORY</a></div></article>
 <article class="card" data-category="Arcade"><div class="art">✊</div><div class="cardbody"><span class="tag">Arcade</span><h2>Rock Paper Scissors</h2><p>Pick your move and beat the CPU in a best-of-five match.</p><a class="btn" href="games/rock-paper-scissors.html">PLAY RPS</a></div></article>
 </section>
-<div class="status" style="margin-top:18px">Note: Practice points are stored on this device for testing only. They are not cash and cannot currently be withdrawn. Cash rewards will require secure server-side validation, funded reward pools, and verified payout setup.</div>
+<div class="status" style="margin-top:18px">Note: Practice points are stored on this device for testing only. They are not cash and cannot currently be withdrawn.</div>
 </main><footer>© 2026 GAMEVERSE PH • Play fair. Have fun.</footer>
+
 <script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut,createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile,sendPasswordResetEmail,sendEmailVerification}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut,createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile,sendPasswordResetEmail,sendEmailVerification,setPersistence,browserLocalPersistence} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const firebaseConfig={apiKey:"AIzaSyCeMwYBG6AVch8CXr-Y4ngcp9cmWtqsruU",authDomain:"gameverse-102213.firebaseapp.com",projectId:"gameverse-102213",storageBucket:"gameverse-102213.firebasestorage.app",messagingSenderId:"87748222074",appId:"1:87748222074:web:ef7757ff1df09e84006fc3",measurementId:"G-548P0BBQM4"};
 const app=initializeApp(firebaseConfig),auth=getAuth(app);
+await setPersistence(auth,browserLocalPersistence).catch(()=>{});
 const $=id=>document.getElementById(id),modal=$('authModal'),form=$('authForm');
 let mode='signup';
-function showMessage(message,isError=true){$('authMessage').textContent=message;$('authMessage').style.color=isError?'#ff9b9b':'#00ff88'}
-function setMode(next){mode=next;const signup=mode==='signup';$('authTitle').textContent=signup?'Create your account':'Welcome back';$('authName').style.display=signup?'block':'none';$('authName').previousElementSibling.style.display=signup?'block':'none';$('authName').required=signup;$('authPassword').autocomplete=signup?'new-password':'current-password';$('authSubmit').textContent=signup?'Create Account':'Log In';$('switchPrompt').textContent=signup?'Already have an account?':"Don't have an account?";$('switchAuth').textContent=signup?'Log in':'Sign up';$('forgotPassword').style.display=signup?'none':'block';showMessage('')}
+const isInApp=/FBAN|FBAV|Messenger|Instagram|Line|Twitter/i.test(navigator.userAgent);
+if(isInApp){$('inAppWarn').style.display='block';}
+$('openChrome').onclick=()=>{window.open(location.href,'_blank');};
+
+// --- ACCURATE POINTS SYSTEM ---
+function getPoints(){const v=parseInt(localStorage.getItem('gv_points')||'0',10);return Number.isFinite(v)&&v>=0?v:0;}
+function setPoints(v){const clean=Math.max(0,Math.floor(Number(v)||0));localStorage.setItem('gv_points',String(clean));$('points').textContent=String(clean);}
+window.addPoints=(n)=>setPoints(getPoints()+(Number(n)||0));
+setPoints(getPoints());
+
+function showMessage(m,isError=true){$('authMessage').textContent=m;$('authMessage').style.color=isError?'#ff9b9b':'#00ff88'}
+function setMode(next){mode=next;const s=mode==='signup';$('authTitle').textContent=s?'Create your account':'Welcome back';$('authName').style.display=s?'block':'none';$('authName').previousElementSibling.style.display=s?'block':'none';$('authName').required=s;$('authSubmit').textContent=s?'Create Account':'Log In';$('switchPrompt').textContent=s?'Already have an account?':"Don't have an account?";$('switchAuth').textContent=s?'Log in':'Sign up';$('forgotPassword').style.display=s?'none':'block';showMessage('')}
 function openModal(){modal.style.display='flex';setMode('signup')}
 function closeModal(){modal.style.display='none';form.reset();showMessage('')}
+$('loginBtn').onclick=()=>{if(auth.currentUser){signOut(auth).catch(e=>$('status').textContent=e.message)}else openModal()};
+$('closeAuth').onclick=closeModal;modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+$('switchAuth').onclick=()=>setMode(mode==='signup'?'login':'signup');
+form.addEventListener('submit',async e=>{e.preventDefault();const email=$('authEmail').value.trim(),password=$('authPassword').value;const btn=$('authSubmit');btn.disabled=true;btn.textContent='Please wait...';showMessage('');try{if(mode==='signup'){const c=await createUserWithEmailAndPassword(auth,email,password);const name=$('authName').value.trim();if(name)await updateProfile(c.user,{displayName:name});await sendEmailVerification(c.user);showMessage('Account created! Check your email to verify.',false);setTimeout(closeModal,2200)}else{await signInWithEmailAndPassword(auth,email,password);closeModal()}}catch(err){const map={'auth/email-already-in-use':'This email already has an account. Please log in.','auth/invalid-email':'Please enter a valid email address.','auth/weak-password':'Password must be at least 6 characters.','auth/user-not-found':'No account found with this email.','auth/wrong-password':'Incorrect email or password.','auth/invalid-credential':'Incorrect email or password.','auth/too-many-requests':'Too many attempts. Please try again later.','auth/network-request-failed':'Network failed. Nasa Messenger ka ba? Buksan mo sa Chrome, o check internet mo.','auth/popup-blocked':'Popup blocked. Try ulit o buksan sa Chrome.','auth/popup-closed-by-user':'Popup closed. Try ulit.'};showMessage(map[err.code]||err.message)}finally{btn.disabled=false;btn.textContent=mode==='signup'?'Create Account':'Log In'}});
+$('googleBtn').onclick=async()=>{const btn=$('googleBtn');btn.disabled=true;btn.textContent='Connecting...';try{try{await signInWithPopup(auth,new GoogleAuthProvider());closeModal()}catch(popupErr){if(popupErr.code==='auth/popup-blocked'||popupErr.code==='auth/popup-closed-by-user'||popupErr.code==='auth/network-request-failed'||popupErr.code==='auth/cancelled-popup-request'||isInApp){showMessage('Popup blocked sa Messenger. Lilipat tayo sa Redirect login...',false);await signInWithRedirect(auth,new GoogleAuthProvider())}else throw popupErr}}catch(e){showMessage(e.message)}finally{btn.disabled=false;btn.textContent='Continue with Google'}};
+getRedirectResult(auth).then(r=>{if(r?.user)closeModal()}).catch(e=>showMessage(e.message));
+$('forgotPassword').onclick=async()=>{const email=$('authEmail').value.trim();if(!email){showMessage('Enter your email first.');return}try{await sendPasswordResetEmail(auth,email);showMessage('Password reset email sent.',false)}catch(e){showMessage(e.message)}};
+onAuthStateChanged(auth,user=>{$('loginBtn').textContent=user?'Sign out':'Login / Sign up';$('status').textContent=user?'Welcome, '+(user.displayName||user.email||'player')+'! Choose a game.':'Choose a game and start playing.'});
+</script>
+<script>
+// --- ACCURATE FILTER + COUNT ---
+function applyFilter(filter){let shown=0;document.querySelectorAll('.card').forEach(c=>{const show=filter==='All'||c.dataset.category===filter;c.style.display=show?'flex':'none';if(show)shown++});document.getElementById('gameCount').textContent=shown+' game(s) shown';}
+document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));b.classList.add('active');applyFilter(b.dataset.filter)}));
+applyFilter('All');
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script></body></html>sage('')}
 $('loginBtn').onclick=()=>{if(auth.currentUser){signOut(auth).catch(e=>document.getElementById('status').textContent=e.message)}else openModal()};
 $('closeAuth').onclick=closeModal;
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
