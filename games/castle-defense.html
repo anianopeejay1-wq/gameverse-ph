@@ -18,7 +18,16 @@ h1{font-size:clamp(22px,4vw,34px);margin:8px 0;color:#f1d49b}.sub{color:#aeb8c1;
 #start{background:#4d9c75;color:#07160e;border-color:#83c9a3}#restart{background:#596979;color:#fff}
 .note{font-size:12px;color:#9eabb6;line-height:1.5;margin:12px 2px}
 @media(max-width:560px){main{padding:9px}.toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{font-size:12px;padding:7px 9px}#view{height:55vh;min-height:310px}}
-</style></head><body>
+</style><script>document.documentElement.classList.add("gv-auth-check");</script>
+<style>html.gv-auth-check body{visibility:hidden!important}</style>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const firebaseConfig={apiKey:"AIzaSyCeMwYBG6AVch8CXr-Y4ngcp9cmWtqsruU",authDomain:"gameverse-102213.firebaseapp.com",databaseURL:"https://gameverse-102213-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"gameverse-102213",storageBucket:"gameverse-102213.firebasestorage.app",messagingSenderId:"87748222074",appId:"1:87748222074:web:ef7757ff1df09e84006fc3",measurementId:"G-548P0BBQM4"};
+const auth=getAuth(initializeApp(firebaseConfig));
+onAuthStateChanged(auth,user=>{if(user){document.documentElement.classList.remove("gv-auth-check")}else{location.replace("../?login=required")}});
+</script>
+</head><body>
 <header><b>🏰 GAMEVERSE PH · 3D SIEGE</b><a href="../index.html">← Lobby</a></header>
 <main>
 <div class="intro"><div><h1>Castle Siege: Kingdom Defense</h1><p class="sub">Build your fortress. Command your defenses. Survive the siege.</p></div><div class="stat">3D REAL-TIME STRATEGY</div></div>
