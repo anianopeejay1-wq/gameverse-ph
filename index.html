@@ -191,6 +191,7 @@ const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const db=getDatabase(app);
 await setPersistence(auth,browserLocalPersistence).catch(()=>{});
+if(new URLSearchParams(location.search).get("login")==="required"){await signOut(auth).catch(()=>{});history.replaceState({}, "", location.pathname);}
 const $=id=>document.getElementById(id);let mode="signup";
 function message(t,error=true){$("authMessage").textContent=t;$("authMessage").style.color=error?"#ff9b9b":"#00ff88"}
 function setMode(next){mode=next;const signup=mode==="signup";$("authTitle").textContent=signup?"Create your account":"Welcome back";$("authIntro").textContent=signup?"Create a free player account to unlock the game lobby.":"Sign in to continue to the GAMEVERSE PH lobby.";$("nameField").style.display=signup?"block":"none";$("playerName").required=signup;$("submitAuth").textContent=signup?"Create Account":"Sign In";$("switchText").textContent=signup?"Already have an account?":"New to GAMEVERSE PH?";$("switchMode").textContent=signup?"Log in":"Sign up";message("")}
