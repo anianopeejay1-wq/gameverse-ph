@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Private player profile: the signed-in owner may read their own profile.
+    // Client writes stay disabled until a validated profile service is deployed.
+    match /users/{userId} {
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow list, create, update, delete: if false;
+
+      // Wallet balances and reward history are readable only by their owner.
+      // All writes must come from a trusted server using the Firebase Admin SDK.
+      match /wallet/{document=**} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+      match /pointLedger/{entryId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+      match /missionClaims/{claimId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+      match /payoutMethods/{methodId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+    }
+
+    // Default deny: no other collection is accessible from client apps.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
