@@ -1,46 +1,97 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#090914"><title>Castle Defense | GAMEVERSE PH</title>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#101820"><title>3D Castle Siege | GAMEVERSE PH</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#090914;color:#fff;font:16px Arial,sans-serif;padding:14px}header,.wrap{max-width:900px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}a,.btn{background:#00ef88;color:#06130c;border:0;border-radius:9px;padding:10px 12px;font-weight:800;text-decoration:none;cursor:pointer}.panel{background:#17172a;border:1px solid #30304a;border-radius:15px;padding:15px;margin:12px 0}h1{color:#00ef88;margin:8px 0}.hud,.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between}.stat{background:#24243d;padding:9px 12px;border-radius:9px;font-weight:bold}.controls{margin-top:12px}.controls button{flex:1;min-width:135px}canvas{display:block;width:100%;height:auto;background:#111a2b;border:2px solid #536078;border-radius:12px;touch-action:manipulation}.muted{color:#aaa;line-height:1.5;font-size:14px}#message{min-height:24px;color:#ffe08a;margin-top:10px}.small{font-size:12px;color:#aaa}button:disabled{opacity:.45;cursor:not-allowed}
+*{box-sizing:border-box}body{margin:0;background:#0b1118;color:#f4f0e6;font:15px system-ui,Arial;overflow-x:hidden}
+header{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#111c27;border-bottom:1px solid #344452;position:relative;z-index:3}
+header b{color:#e7bd70;letter-spacing:1px}a,.btn{border:1px solid #6f624b;background:#b78b4e;color:#17130d;padding:10px 13px;border-radius:9px;font-weight:800;text-decoration:none;cursor:pointer}
+main{max-width:1100px;margin:auto;padding:12px}.intro{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+h1{font-size:clamp(22px,4vw,34px);margin:8px 0;color:#f1d49b}.sub{color:#aeb8c1;margin:0 0 10px;font-size:13px}
+.hud{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.stat{background:#1b2935;border:1px solid #3a4b58;padding:8px 11px;border-radius:8px;font-weight:800;font-size:13px}
+#gamebox{position:relative;background:#121e27;border:1px solid #59636a;border-radius:13px;overflow:hidden;min-height:300px}
+#view{display:block;width:100%;height:min(62vh,570px);min-height:300px;touch-action:none}
+#hint{position:absolute;left:10px;top:10px;background:#101820cc;border:1px solid #697987;border-radius:8px;padding:7px 9px;font-size:12px;color:#f4dfb4;pointer-events:none}
+#message{min-height:24px;color:#f5d28f;padding:10px 2px;font-size:13px}
+.toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.toolbar button{min-height:48px;font-size:12px;padding:8px 5px}.toolbar button.active{outline:3px solid #f6d58d;background:#e2b765}
+#start{background:#4d9c75;color:#07160e;border-color:#83c9a3}#restart{background:#596979;color:#fff}
+.note{font-size:12px;color:#9eabb6;line-height:1.5;margin:12px 2px}
+@media(max-width:560px){main{padding:9px}.toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{font-size:12px;padding:7px 9px}#view{height:55vh;min-height:310px}}
 </style></head><body>
-<header><b style="color:#00ef88;font-size:21px">🏰 CASTLE DEFENSE</b><a href="../index.html">← Game Lobby</a></header>
-<main class="wrap"><section class="panel"><h1>Kingdom War</h1><p class="muted">Build archer towers, powerful cannons and defensive walls. Upgrade your castle, then survive increasingly difficult enemy waves.</p>
-<div class="hud"><div class="stat">❤️ Castle: <span id="hp">100</span>/<span id="maxHp">100</span></div><div class="stat">🪙 Gold: <span id="gold">120</span></div><div class="stat">🌊 Wave: <span id="wave">0</span></div><div class="stat">☠️ Defeated: <span id="kills">0</span></div><div class="stat">🧱 Walls: <span id="walls">0</span></div></div></section>
-<section class="panel"><canvas id="field" width="720" height="390" aria-label="Castle defense game board"></canvas>
-<div class="controls">
-<button class="btn" id="archer">🏹 Archer Tower (35)</button><button class="btn" id="cannon" style="background:#ffad66">💣 Cannon (60)</button><button class="btn" id="wall" style="background:#b7c4d6">🧱 Wall (25)</button><button class="btn" id="upgrade" style="background:#d7a7ff">🏰 Upgrade Castle (75)</button><button class="btn" id="repair" style="background:#ffd65b">❤️ Repair (25)</button><button class="btn" id="waveBtn" style="background:#79b7ff">⚔ Start Wave</button><button class="btn" id="restart" style="background:#aaa">Restart</button></div>
-<div id="message" role="status">Build your defenses before starting Wave 1. Tap an empty pad to place your selected defense.</div><p class="small">Archer: fast single shots. Cannon: slow explosive shots that damage nearby enemies. Walls reduce damage when enemies reach your castle. Castle upgrades increase maximum health.</p></section></main>
-<script>
-const canvas=document.getElementById('field'),ctx=canvas.getContext('2d'),$=id=>document.getElementById(id);
-const pads=[{x:205,y:105},{x:315,y:105},{x:425,y:105},{x:205,y:285},{x:315,y:285},{x:425,y:285}];
-let hp,maxHp,gold,wave,kills,defenses,enemies,shots,selected,spawning,spawnLeft,lastSpawn,gameOver,raf,lastTime,waveCleared;
-const costs={archer:35,cannon:60,wall:25};
-function reset(){cancelAnimationFrame(raf);hp=100;maxHp=100;gold=120;wave=0;kills=0;defenses=[];enemies=[];shots=[];selected=null;spawning=false;spawnLeft=0;lastSpawn=0;gameOver=false;lastTime=0;waveCleared=true;$('message').textContent='Build your defenses before starting Wave 1. Tap an empty pad to place your selected defense.';for(const id of ['archer','cannon','wall','upgrade','repair','waveBtn'])$(id).disabled=false;hud();draw();raf=requestAnimationFrame(loop)}
-function hud(){$('hp').textContent=Math.max(0,hp);$('maxHp').textContent=maxHp;$('gold').textContent=gold;$('wave').textContent=wave;$('kills').textContent=kills;$('walls').textContent=defenses.filter(d=>d.type==='wall').length}
-function say(t){$('message').textContent=t}
-function choose(type){if(gameOver)return;if(selected===type){selected=null;say('Build selection cancelled.')}else if(gold<costs[type])say('Not enough gold for '+type+'. Defeat enemies to earn more.');else{selected=type;say('Tap an empty glowing pad to place '+type+'.')}draw()}
-function place(p){if(!selected)return;if(defenses.some(d=>d.x===p.x&&d.y===p.y)){say('That pad is already occupied.');return}const type=selected,cost=costs[type];if(gold<cost){say('Not enough gold.');return}gold-=cost;defenses.push({x:p.x,y:p.y,type,cool:0});selected=null;say(type==='wall'?'Wall built! Each wall reduces damage from enemies that reach your castle.':type==='cannon'?'Cannon built! Explosive shots damage groups of enemies.':'Archer tower built! It automatically fires at enemies in range.');hud();draw()}
-function upgrade(){if(gameOver)return;if(gold<75){say('Castle upgrade costs 75 gold.');return}gold-=75;maxHp+=30;hp=Math.min(maxHp,hp+30);say('Castle upgraded! Maximum health increased by 30.');hud();draw()}
-function repair(){if(gameOver)return;if(hp>=maxHp){say('Castle is already at full health.');return}if(gold<25){say('Repair costs 25 gold.');return}gold-=25;hp=Math.min(maxHp,hp+30);say('Castle repaired by 30 health.');hud();draw()}
-function startWave(){if(gameOver||spawning||enemies.length)return;wave++;waveCleared=false;spawnLeft=5+wave*2;spawning=true;lastSpawn=0;$('waveBtn').disabled=true;say('Wave '+wave+' incoming! Defend the kingdom!');hud()}
-function spawnEnemy(){const tank=wave>=3&&Math.random()<.25;const health=(tank?4:2)+Math.floor((wave-1)/3);enemies.push({x:700,y:195+(Math.random()-.5)*90,hp:health,max:health,speed:(tank?20:29)+wave*1.7,r:tank?16:12})}
-function waveDone(){if(wave>0&&!waveCleared&&!spawning&&enemies.length===0){waveCleared=true;$('waveBtn').disabled=false;gold+=20;say('Wave '+wave+' cleared! +20 gold victory bonus. Prepare for the next attack.');hud()}}
-function loop(ts){if(!lastTime)lastTime=ts;const dt=Math.min((ts-lastTime)/1000,.04);lastTime=ts;if(!gameOver){
-if(spawning){lastSpawn+=dt;if(lastSpawn>=1.05&&spawnLeft>0){spawnEnemy();spawnLeft--;lastSpawn=0}if(spawnLeft===0)spawning=false}
-for(const e of enemies){e.x-=e.speed*dt;if(e.x<85){e.leaked=true;const wallCount=defenses.filter(d=>d.type==='wall').length;hp-=Math.max(2,e.max*5-Math.min(12,wallCount*2))}}
-enemies=enemies.filter(e=>!e.leaked&&e.hp>0);
-for(const d of defenses){if(d.type==='wall')continue;d.cool-=dt;if(d.cool<=0){let target=null,range=d.type==='cannon'?185:150,nearest=range;for(const e of enemies){const dist=Math.hypot(e.x-d.x,e.y-d.y);if(dist<nearest){nearest=dist;target=e}}if(target){shots.push({x:d.x,y:d.y,target,speed:d.type==='cannon'?220:330,damage:d.type==='cannon'?2:1,splash:d.type==='cannon'?48:0});d.cool=d.type==='cannon'?1.45:.58}}}
-for(const s of shots){if(!s.target||s.target.hp<=0){s.dead=true;continue}const dx=s.target.x-s.x,dy=s.target.y-s.y,dist=Math.hypot(dx,dy),step=s.speed*dt;if(dist<=step){const tx=s.target.x,ty=s.target.y;s.target.hp-=s.damage;if(s.splash){for(const e of enemies)if(e!==s.target&&Math.hypot(e.x-tx,e.y-ty)<s.splash)e.hp-=s.damage}s.dead=true}else{s.x+=dx/dist*step;s.y+=dy/dist*step}}
-shots=shots.filter(s=>!s.dead);const newlyDead=enemies.filter(e=>e.hp<=0);for(const e of newlyDead){if(!e.rewarded){e.rewarded=true;kills++;gold+=10}}enemies=enemies.filter(e=>e.hp>0);
-if(hp<=0){hp=0;gameOver=true;spawning=false;for(const id of ['waveBtn','archer','cannon','wall','upgrade','repair'])$(id).disabled=true;say('Your castle has fallen! Press Restart to defend the kingdom again.')}
-if(!spawning&&enemies.length===0&&!gameOver)waveDone();hud()}draw();raf=requestAnimationFrame(loop)}
-function draw(){ctx.clearRect(0,0,720,390);ctx.fillStyle='#18263a';ctx.fillRect(0,0,720,390);for(let x=0;x<720;x+=48)for(let y=0;y<390;y+=48){ctx.strokeStyle='#31445a';ctx.strokeRect(x,y,48,48)}
-ctx.fillStyle='#6d543d';ctx.fillRect(70,160,650,70);ctx.fillStyle='#98764b';ctx.fillRect(70,182,650,26);
-ctx.fillStyle='#9a9aaf';ctx.fillRect(18,125,76,145);ctx.fillStyle='#c8c8d4';ctx.fillRect(28,105,18,35);ctx.fillRect(66,105,18,35);ctx.fillStyle='#d7b65c';ctx.fillRect(44,215,25,55);ctx.fillStyle='#ffdf79';ctx.fillRect(48,145,15,15);ctx.fillStyle='#e8e8f0';ctx.font='bold 14px Arial';ctx.fillText('YOUR CASTLE',12,294);
-for(const p of pads){const d=defenses.find(v=>v.x===p.x&&v.y===p.y);ctx.beginPath();ctx.arc(p.x,p.y,26,0,Math.PI*2);ctx.fillStyle=d?(d.type==='wall'?'#8b9bad':d.type==='cannon'?'#a75c35':'#53616d'):selected?'#315f4c':'#283a4d';ctx.fill();ctx.strokeStyle=selected?'#00ff88':'#8393a5';ctx.lineWidth=2;ctx.stroke();if(d){if(d.type==='wall'){ctx.fillStyle='#c4ccd5';ctx.fillRect(p.x-17,p.y-13,34,26);ctx.strokeStyle='#64748b';ctx.strokeRect(p.x-17,p.y-13,34,26)}else if(d.type==='cannon'){ctx.fillStyle='#ffcb82';ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.fill();ctx.fillStyle='#46352b';ctx.fillRect(p.x-3,p.y-20,20,8)}else{ctx.fillStyle='#b8c7d8';ctx.fillRect(p.x-10,p.y-12,20,26);ctx.fillStyle='#00ef88';ctx.fillRect(p.x-4,p.y-20,8,10)}}else{ctx.fillStyle='#cbd5e1';ctx.font='bold 20px Arial';ctx.fillText('+',p.x-6,p.y+7)}}
-for(const e of enemies){ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fillStyle='#c64d58';ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(e.x-5,e.y-4,3,3);ctx.fillRect(e.x+3,e.y-4,3,3);ctx.fillStyle='#391b27';ctx.fillRect(e.x-15,e.y-e.r-9,30,4);ctx.fillStyle='#ff5555';ctx.fillRect(e.x-15,e.y-e.r-9,30*Math.max(0,e.hp/e.max),4)}
-for(const s of shots){ctx.beginPath();ctx.arc(s.x,s.y,s.splash?5:3,0,Math.PI*2);ctx.fillStyle=s.splash?'#ffad66':'#ffe36b';ctx.fill()}
-if(gameOver){ctx.fillStyle='#000b';ctx.fillRect(0,0,720,390);ctx.fillStyle='#fff';ctx.font='bold 34px Arial';ctx.textAlign='center';ctx.fillText('CASTLE DESTROYED',360,190);ctx.textAlign='left'}}
-canvas.addEventListener('click',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*720/r.width,y=(e.clientY-r.top)*390/r.height,p=pads.find(p=>Math.hypot(p.x-x,p.y-y)<30);if(p){if(selected)place(p);else say('Choose Archer, Cannon or Wall first, then tap an empty pad.')}});
-$('archer').onclick=()=>choose('archer');$('cannon').onclick=()=>choose('cannon');$('wall').onclick=()=>choose('wall');$('upgrade').onclick=upgrade;$('repair').onclick=repair;$('waveBtn').onclick=startWave;$('restart').onclick=reset;reset();
+<header><b>🏰 GAMEVERSE PH · 3D SIEGE</b><a href="../index.html">← Lobby</a></header>
+<main>
+<div class="intro"><div><h1>Castle Siege: Kingdom Defense</h1><p class="sub">Build your fortress. Command your defenses. Survive the siege.</p></div><div class="stat">3D REAL-TIME STRATEGY</div></div>
+<div class="hud">
+<div class="stat">❤️ Castle <span id="hp">100</span>/<span id="maxhp">100</span></div>
+<div class="stat">🪙 Gold <span id="gold">150</span></div>
+<div class="stat">🌊 Wave <span id="wave">0</span>/10</div>
+<div class="stat">☠️ Defeated <span id="kills">0</span></div>
+<div class="stat">🛡️ Defenses <span id="built">0</span></div>
+</div>
+<div id="gamebox"><canvas id="view"></canvas><div id="hint">Drag to rotate camera · Pinch/scroll to zoom · Tap a green pad to build</div></div>
+<div id="message" role="status">Choose a defense, then tap a glowing build pad. Start the first wave when ready.</div>
+<div class="toolbar">
+<button class="btn" id="archer">🏹 Archer Tower · 40</button>
+<button class="btn" id="cannon">💥 Cannon · 70</button>
+<button class="btn" id="wall">🧱 Stone Wall · 30</button>
+<button class="btn" id="upgrade">🏰 Upgrade · 90</button>
+<button class="btn" id="repair">❤️ Repair · 30</button>
+<button class="btn" id="start">⚔️ Start Wave</button>
+<button class="btn" id="restart">↻ Restart</button>
+</div>
+<p class="note">Gameplay: Defenses automatically attack enemies approaching the castle. Earn gold by defeating attackers and clearing waves. Build strategically, upgrade your castle, and survive all 10 waves. This game saves no cash value; gold is an in-game resource only.</p>
+</main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const $=id=>document.getElementById(id),canvas=$('view');
+let scene,camera,renderer,clock,raycaster,mouse,ground,castle,selected=null,buildings=[],enemies=[],bolts=[],effects=[];
+let hp=100,maxHp=100,gold=150,wave=0,kills=0,spawning=false,spawnLeft=0,spawnClock=0,gameOver=false,cleared=true,frame=0;
+const pads=[[-8,-7],[-3,-7],[2,-7],[7,-7],[-8,7],[-3,7],[2,7],[7,7]];
+const prices={archer:40,cannon:70,wall:30};
+const mats={stone:new THREE.MeshStandardMaterial({color:0x858b8c,roughness:0.92}),dark:new THREE.MeshStandardMaterial({color:0x414b50,roughness:1}),roof:new THREE.MeshStandardMaterial({color:0x55443a,roughness:0.9}),gold:new THREE.MeshStandardMaterial({color:0xc99b52,metalness:.45,roughness:.5}),grass:new THREE.MeshStandardMaterial({color:0x425b43,roughness:1}),road:new THREE.MeshStandardMaterial({color:0x89775e,roughness:1}),red:new THREE.MeshStandardMaterial({color:0x9d3530,roughness:.8}),steel:new THREE.MeshStandardMaterial({color:0x9caeb9,metalness:.65,roughness:.4})};
+function box(w,h,d,mat,x,y,z,group=scene){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;group.add(m);return m}
+function cylinder(rt,rb,h,mat,x,y,z,group=scene,n=8){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),mat);m.position.set(x,y,z);m.castShadow=true;group.add(m);return m}
+function makeTower(x,z,type){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+if(type==='wall'){box(2.1,1.35,1.2,mats.stone,0,.68,0,g);for(let i=-1;i<=1;i++)box(.45,.35,1.25,mats.dark,i*.7,1.5,0,g)}
+else{cylinder(.8,.95,1.4,mats.stone,0,.7,0,g);cylinder(.95,.95,.18,mats.dark,0,1.43,0,g);cylinder(.57,.57,.9,mats.roof,0,1.95,0,g);cylinder(.09,.09,.5,mats.gold,0,2.65,0,g);if(type==='cannon'){cylinder(.28,.28,.65,mats.dark,0,1.8,0,g,12);const barrel=cylinder(.16,.22,1.15,mats.steel,0,2.1,-.35,g,12);barrel.rotation.x=Math.PI/2}}
+return {type,x,z,group:g,cool:0,level:1}}
+function buildCastle(){const g=new THREE.Group();scene.add(g);box(5,3.2,5,mats.stone,-13,1.6,0,g);box(5.5,.45,5.5,mats.dark,-13,3.25,0,g);
+for(const [x,z] of [[-15.3,-2.3],[-10.7,-2.3],[-15.3,2.3],[-10.7,2.3]]){cylinder(.9,.9,4.4,mats.stone,x,2.2,z,g);cylinder(1.02,1.02,.35,mats.dark,x,4.45,z,g);const r=cylinder(.72,.9,1.4,mats.roof,x,5.25,z,g);r.geometry=new THREE.ConeGeometry(.9,1.7,8)}
+box(1.8,2.5,mats.dark,-13,1.25,2.53,g);box(1.3,1.9,mats.gold,-13,1,2.59,g);
+for(let x=-15;x<=-11;x+=1)box(.35,.55,.4,mats.dark,x,3.65,-2.7,g);
+return g}
+function init(){scene=new THREE.Scene();scene.background=new THREE.Color(0x9baeb4);scene.fog=new THREE.Fog(0x9baeb4,32,75);camera=new THREE.PerspectiveCamera(48,1,.1,120);camera.position.set(13,19,27);camera.lookAt(-3,0,0);
+renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+scene.add(new THREE.HemisphereLight(0xdcecff,0x34402c,2));const sun=new THREE.DirectionalLight(0xffe1b2,3);sun.position.set(-8,22,12);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
+box(100,.5,100,mats.grass,0,-.35,0);box(48,.04,5,mats.road,4,-.06,0);castle=buildCastle();
+for(let i=0;i<18;i++){const x=-22+Math.random()*42,z=(Math.random()-.5)*28;if(x>-10&&Math.abs(z)<5)continue;const trunk=cylinder(.12,.2,1.2,mats.dark,x,.6,z);const crown=new THREE.Mesh(new THREE.ConeGeometry(.85,2.4,7),new THREE.MeshStandardMaterial({color:0x294a36,roughness:1}));crown.position.set(x,2.2,z);crown.castShadow=true;scene.add(crown)}
+pads.forEach(([x,z])=>{const p=cylinder(.78,.78,.16,new THREE.MeshStandardMaterial({color:0x69a76c,emissive:0x153b1b}),x,.05,z);p.userData.pad={x,z};});
+raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();clock=new THREE.Clock();resize();window.addEventListener('resize',resize);canvas.addEventListener('pointerdown',onTap);setupCamera();renderer.setAnimationLoop(animate)}
+function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+let drag=null,camAngle=.45,camRadius=33,camHeight=20;
+function setupCamera(){canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,moved:false};canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4)drag.moved=true;if(drag.moved){camAngle-=dx*.006;camHeight=Math.max(10,Math.min(32,camHeight+dy*.06));drag.x=e.clientX;drag.y=e.clientY}});canvas.addEventListener('pointerup',()=>{drag=null});canvas.addEventListener('wheel',e=>{camRadius=Math.max(20,Math.min(48,camRadius+e.deltaY*.025))},{passive:true})}
+function onTap(e){if(drag?.moved)return;const r=canvas.getBoundingClientRect();mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(mouse,camera);const hits=raycaster.intersectObjects(scene.children,true);for(const h of hits){let o=h.object;while(o&& !o.userData.pad)o=o.parent;if(o?.userData.pad){place(o.userData.pad);return}}}
+function place(p){if(!selected||gameOver)return;if(buildings.some(b=>b.x===p.x&&b.z===p.z)){say('Occupied pad. Choose another green pad.');return}if(gold<prices[selected]){say('Not enough gold. Defeat enemies to earn more.');return}gold-=prices[selected];buildings.push(makeTower(p.x,p.z,selected));selected=null;updateHud();say('Defense built. Start a wave when you are ready.')}
+function choose(t){if(gameOver)return;if(gold<prices[t]){say('Not enough gold for this defense.');return}selected=selected===t?null:t;document.querySelectorAll('.toolbar .btn').forEach(b=>b.classList.remove('active'));if(selected)$ (t).classList.add('active');say(selected?'Tap a green build pad to place your '+t+'.':'Build selection cancelled.')}
+function say(s){$('message').textContent=s}
+function updateHud(){$('hp').textContent=Math.max(0,Math.ceil(hp));$('maxhp').textContent=maxHp;$('gold').textContent=gold;$('wave').textContent=wave;$('kills').textContent=kills;$('built').textContent=buildings.length}
+function startWave(){if(gameOver||spawning||enemies.length||wave>=10)return;wave++;spawnLeft=5+wave*2;spawning=true;spawnClock=0;cleared=false;$('start').disabled=true;say('Wave '+wave+'! Enemy troops are marching toward your castle.');updateHud()}
+function spawn(){const heavy=wave>2&&Math.random()<.28,health=heavy?5+wave:2+Math.floor(wave/2),mesh=new THREE.Group();const body=cylinder(.36,.42,1.05,heavy?mats.dark:mats.red,0,.75,0,mesh,8);cylinder(.24,.24,.42,mats.gold,0,1.5,0,mesh,8);const head=cylinder(.25,.25,.35,mats.red,0,1.9,0,mesh,8);box(.12,.5,.12,mats.steel,.4,1,0,mesh);mesh.position.set(22,0,(Math.random()-.5)*2.6);scene.add(mesh);enemies.push({mesh,hp:health,max:health,speed:heavy?1.05:1.55+wave*.08,heavy,hit:0})}
+function projectile(from,target,type){const mesh=new THREE.Mesh(new THREE.SphereGeometry(type==='cannon'?.22:.11,8,8),new THREE.MeshStandardMaterial({color:type==='cannon'?0xff8a32:0xffe39a,emissive:type==='cannon'?0x9b2d00:0x8a651e}));mesh.position.set(from.x,from.y+1.7,from.z);scene.add(mesh);bolts.push({mesh,target,damage:type==='cannon'?3:1,speed:type==='cannon'?15:23,splash:type==='cannon'?2.5:0})}
+function hitEnemy(e,dmg){e.hp-=dmg;if(e.hp<=0){gold+=12;kills++;scene.remove(e.mesh);enemies=enemies.filter(x=>x!==e)}}
+function animate(){const dt=Math.min(clock.getDelta(),.04);frame+=dt;camera.position.set(-3+Math.sin(camAngle)*camRadius,camHeight,Math.cos(camAngle)*camRadius);camera.lookAt(-3,0,0);
+if(!gameOver){if(spawning){spawnClock+=dt;if(spawnClock>1.05&&spawnLeft>0){spawn();spawnLeft--;spawnClock=0}if(spawnLeft===0)spawning=false}
+for(const e of [...enemies]){e.mesh.position.x-=e.speed*dt;if(e.mesh.position.x<-10.1){scene.remove(e.mesh);enemies=enemies.filter(x=>x!==e);const wallCount=buildings.filter(b=>b.type==='wall').length;hp-=Math.max(3,10-Math.min(6,wallCount));}}
+for(const b of buildings){if(b.type==='wall')continue;b.cool-=dt;if(b.cool<=0){let target=null,dist=b.type==='cannon'?13:10;for(const e of enemies){const d=e.mesh.position.distanceTo(new THREE.Vector3(b.x,0,b.z));if(d<dist){dist=d;target=e}}if(target){projectile({x:b.x,y:1.7,z:b.z},target,b.type);b.cool=b.type==='cannon'?1.45:.62}}}
+for(const q of [...bolts]){if(!q.target||!enemies.includes(q.target)){scene.remove(q.mesh);bolts=bolts.filter(x=>x!==q);continue}const dest=q.target.mesh.position.clone().add(new THREE.Vector3(0,1.4,0));const delta=dest.sub(q.mesh.position),len=delta.length(),step=q.speed*dt;if(len<step){const target=q.target,point=target.mesh.position.clone();hitEnemy(target,q.damage);if(q.splash)for(const other of [...enemies])if(other.mesh.position.distanceTo(point)<q.splash)hitEnemy(other,2);scene.remove(q.mesh);bolts=bolts.filter(x=>x!==q)}else q.mesh.position.add(delta.normalize().multiplyScalar(step))}
+if(hp<=0){hp=0;gameOver=true;$('start').disabled=true;say('The castle has fallen. Press Restart to try again.')}
+if(!spawning&&enemies.length===0&&!cleared&&wave>0&&!gameOver){cleared=true;gold+=25;$('start').disabled=false;say(wave===10?'VICTORY! You survived all 10 waves! +25 gold.':'Wave '+wave+' cleared! +25 gold. Prepare for the next attack.')}
+if(wave>=10&&cleared)$('start').disabled=true;updateHud()}
+renderer.render(scene,camera)}
+function restart(){if(renderer)renderer.setAnimationLoop(null);scene?.traverse(o=>{if(o.isMesh){o.geometry?.dispose();if(o.material&&!Array.isArray(o.material))o.material.dispose()}});buildings=[];enemies=[];bolts=[];hp=100;maxHp=100;gold=150;wave=0;kills=0;spawning=false;spawnLeft=0;gameOver=false;cleared=true;selected=null;document.querySelectorAll('.toolbar .btn').forEach(b=>{b.disabled=false;b.classList.remove('active')});init();updateHud();say('Fresh kingdom! Build defenses on green pads, then start Wave 1.')}
+$('archer').onclick=()=>choose('archer');$('cannon').onclick=()=>choose('cannon');$('wall').onclick=()=>choose('wall');
+$('upgrade').onclick=()=>{if(gold<90)return say('Upgrade costs 90 gold.');gold-=90;maxHp+=35;hp=Math.min(maxHp,hp+35);updateHud();say('Castle upgraded! +35 maximum health.')};
+$('repair').onclick=()=>{if(hp>=maxHp)return say('Castle health is already full.');if(gold<30)return say('Repair costs 30 gold.');gold-=30;hp=Math.min(maxHp,hp+35);updateHud();say('Castle repaired by up to 35 health.')};
+$('start').onclick=startWave;$('restart').onclick=restart;init();updateHud();
 </script></body></html>
