@@ -14,7 +14,7 @@ h1{font-size:clamp(22px,4vw,34px);margin:8px 0;color:#f1d49b}.sub{color:#aeb8c1;
 #hint{position:absolute;left:10px;top:10px;background:#101820cc;border:1px solid #697987;border-radius:8px;padding:7px 9px;font-size:12px;color:#f4dfb4;pointer-events:none}
 #message{min-height:24px;color:#f5d28f;padding:10px 2px;font-size:13px}
 .toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.toolbar button{min-height:48px;font-size:12px;padding:8px 5px}.toolbar button.active{outline:3px solid #f6d58d;background:#e2b765}
+.toolbar button{min-height:48px;font-size:12px;padding:8px 5px}.toolbar button.active{outline:3px solid #f6d58d;background:#e2b765}.toolbar button:disabled{opacity:.45;cursor:not-allowed}
 #start{background:#4d9c75;color:#07160e;border-color:#83c9a3}#restart{background:#596979;color:#fff}
 .note{font-size:12px;color:#9eabb6;line-height:1.5;margin:12px 2px}
 @media(max-width:560px){main{padding:9px}.toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{font-size:12px;padding:7px 9px}#view{height:55vh;min-height:310px}}
@@ -37,6 +37,7 @@ onAuthStateChanged(auth,user=>{if(user){document.documentElement.classList.remov
 <div class="stat">🌊 Wave <span id="wave">0</span>/10</div>
 <div class="stat">☠️ Defeated <span id="kills">0</span></div>
 <div class="stat">🛡️ Defenses <span id="built">0</span></div>
+<div class="stat">⚔️ Guards <span id="guards">0</span></div>
 </div>
 <div id="gamebox"><canvas id="view"></canvas><div id="hint">Drag to rotate camera · Pinch/scroll to zoom · Tap a green pad to build</div></div>
 <div id="message" role="status">Choose a defense, then tap a glowing build pad. Start the first wave when ready.</div>
@@ -46,16 +47,18 @@ onAuthStateChanged(auth,user=>{if(user){document.documentElement.classList.remov
 <button class="btn" id="wall">🧱 Stone Wall · 30</button>
 <button class="btn" id="upgrade">🏰 Upgrade · 90</button>
 <button class="btn" id="repair">❤️ Repair · 30</button>
+<button class="btn" id="soldier">🛡️ Deploy Guard · 55</button>
+<button class="btn" id="fire">🎯 Fire Cannon</button>
 <button class="btn" id="start">⚔️ Start Wave</button>
 <button class="btn" id="restart">↻ Restart</button>
 </div>
-<p class="note">Gameplay: Defenses automatically attack enemies approaching the castle. Earn gold by defeating attackers and clearing waves. Build strategically, upgrade your castle, and survive all 10 waves. This game saves no cash value; gold is an in-game resource only.</p>
+<p class="note">Gameplay: Defenses automatically attack enemies approaching the castle. Earn gold by defeating attackers and clearing waves. Build strategically, deploy guards, fire the command cannon, upgrade your castle, and survive all 10 waves. This game saves no cash value; gold is an in-game resource only.</p>
 </main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 const $=id=>document.getElementById(id),canvas=$('view');
 let scene,camera,renderer,clock,raycaster,mouse,ground,castle,selected=null,buildings=[],enemies=[],bolts=[],effects=[];
-let hp=100,maxHp=100,gold=150,wave=0,kills=0,spawning=false,spawnLeft=0,spawnClock=0,gameOver=false,cleared=true,frame=0;
+let hp=100,maxHp=100,gold=150,wave=0,kills=0,spawning=false,spawnLeft=0,spawnClock=0,gameOver=false,cleared=true,frame=0,guards=[],manualCooldown=0;
 const pads=[[-8,-7],[-3,-7],[2,-7],[7,-7],[-8,7],[-3,7],[2,7],[7,7]];
 const prices={archer:40,cannon:70,wall:30};
 const mats={stone:new THREE.MeshStandardMaterial({color:0x858b8c,roughness:0.92}),dark:new THREE.MeshStandardMaterial({color:0x414b50,roughness:1}),roof:new THREE.MeshStandardMaterial({color:0x55443a,roughness:0.9}),gold:new THREE.MeshStandardMaterial({color:0xc99b52,metalness:.45,roughness:.5}),grass:new THREE.MeshStandardMaterial({color:0x425b43,roughness:1}),road:new THREE.MeshStandardMaterial({color:0x89775e,roughness:1}),red:new THREE.MeshStandardMaterial({color:0x9d3530,roughness:.8}),steel:new THREE.MeshStandardMaterial({color:0x9caeb9,metalness:.65,roughness:.4})};
@@ -84,15 +87,19 @@ function onTap(e){if(drag?.moved)return;const r=canvas.getBoundingClientRect();m
 function place(p){if(!selected||gameOver)return;if(buildings.some(b=>b.x===p.x&&b.z===p.z)){say('Occupied pad. Choose another green pad.');return}if(gold<prices[selected]){say('Not enough gold. Defeat enemies to earn more.');return}gold-=prices[selected];buildings.push(makeTower(p.x,p.z,selected));selected=null;updateHud();say('Defense built. Start a wave when you are ready.')}
 function choose(t){if(gameOver)return;if(gold<prices[t]){say('Not enough gold for this defense.');return}selected=selected===t?null:t;document.querySelectorAll('.toolbar .btn').forEach(b=>b.classList.remove('active'));if(selected)$ (t).classList.add('active');say(selected?'Tap a green build pad to place your '+t+'.':'Build selection cancelled.')}
 function say(s){$('message').textContent=s}
-function updateHud(){$('hp').textContent=Math.max(0,Math.ceil(hp));$('maxhp').textContent=maxHp;$('gold').textContent=gold;$('wave').textContent=wave;$('kills').textContent=kills;$('built').textContent=buildings.length}
+function updateHud(){$('hp').textContent=Math.max(0,Math.ceil(hp));$('maxhp').textContent=maxHp;$('gold').textContent=gold;$('wave').textContent=wave;$('kills').textContent=kills;$('built').textContent=buildings.length;$('guards').textContent=guards.length}
 function startWave(){if(gameOver||spawning||enemies.length||wave>=10)return;wave++;spawnLeft=5+wave*2;spawning=true;spawnClock=0;cleared=false;$('start').disabled=true;say('Wave '+wave+'! Enemy troops are marching toward your castle.');updateHud()}
-function spawn(){const heavy=wave>2&&Math.random()<.28,health=heavy?5+wave:2+Math.floor(wave/2),mesh=new THREE.Group();const body=cylinder(.36,.42,1.05,heavy?mats.dark:mats.red,0,.75,0,mesh,8);cylinder(.24,.24,.42,mats.gold,0,1.5,0,mesh,8);const head=cylinder(.25,.25,.35,mats.red,0,1.9,0,mesh,8);box(.12,.5,.12,mats.steel,.4,1,0,mesh);mesh.position.set(22,0,(Math.random()-.5)*2.6);scene.add(mesh);enemies.push({mesh,hp:health,max:health,speed:heavy?1.05:1.55+wave*.08,heavy,hit:0})}
+function spawn(){const boss=wave===10&&spawnLeft===1,heavy=boss||(wave>2&&Math.random()<.28),health=boss?38:heavy?5+wave:2+Math.floor(wave/2),mesh=new THREE.Group();const body=cylinder(.36,.42,1.05,heavy?mats.dark:mats.red,0,.75,0,mesh,8);cylinder(.24,.24,.42,mats.gold,0,1.5,0,mesh,8);const head=cylinder(.25,.25,.35,mats.red,0,1.9,0,mesh,8);box(.12,.5,.12,mats.steel,.4,1,0,mesh);mesh.scale.setScalar(boss?1.9:1);mesh.position.set(22,0,(Math.random()-.5)*2.6);scene.add(mesh);enemies.push({mesh,hp:health,max:health,speed:boss?.72:heavy?1.05:1.55+wave*.08,heavy,boss,hit:0})}
 function projectile(from,target,type){const mesh=new THREE.Mesh(new THREE.SphereGeometry(type==='cannon'?.22:.11,8,8),new THREE.MeshStandardMaterial({color:type==='cannon'?0xff8a32:0xffe39a,emissive:type==='cannon'?0x9b2d00:0x8a651e}));mesh.position.set(from.x,from.y+1.7,from.z);scene.add(mesh);bolts.push({mesh,target,damage:type==='cannon'?3:1,speed:type==='cannon'?15:23,splash:type==='cannon'?2.5:0})}
-function hitEnemy(e,dmg){e.hp-=dmg;if(e.hp<=0){gold+=12;kills++;scene.remove(e.mesh);enemies=enemies.filter(x=>x!==e)}}
+function hitEnemy(e,dmg){e.hp-=dmg;if(e.hp<=0){gold+=e.boss?100:12;kills++;scene.remove(e.mesh);enemies=enemies.filter(x=>x!==e);if(e.boss)say('Boss defeated! The enemy commander is down.')}}
+function deployGuard(){if(gameOver)return;if(gold<55)return say('Deploying a guard costs 55 gold.');gold-=55;const g=new THREE.Group();cylinder(.25,.3,.9,mats.steel,0,.65,0,g);cylinder(.2,.2,.3,mats.gold,0,1.25,0,g);box(.08,.8,.08,mats.dark,.35,.9,0,g);g.position.set(-8,0,(Math.random()-.5)*3);scene.add(g);guards.push({mesh:g,hp:5,cool:0});updateHud();say('Guard deployed! Your soldier will defend the castle automatically.')}
+function fireCommandCannon(){if(gameOver)return;if(manualCooldown>0)return say('Command cannon reloading.');if(!enemies.length)return say('No enemy in range. Wait for the attackers.');const target=enemies.reduce((a,b)=>a.mesh.position.x>b.mesh.position.x?a:b);const p=target.mesh.position.clone();for(const e of [...enemies])if(e.mesh.position.distanceTo(p)<4)hitEnemy(e,5);const blast=new THREE.Mesh(new THREE.SphereGeometry(1.1,12,8),new THREE.MeshBasicMaterial({color:0xffa33c,transparent:true,opacity:.55}));blast.position.copy(p).add(new THREE.Vector3(0,1,0));scene.add(blast);effects.push({mesh:blast,life:.28});manualCooldown=2.8;say('BOOM! Command cannon fired — nearby enemies took damage.');updateHud()}
 function animate(){const dt=Math.min(clock.getDelta(),.04);frame+=dt;camera.position.set(-3+Math.sin(camAngle)*camRadius,camHeight,Math.cos(camAngle)*camRadius);camera.lookAt(-3,0,0);
-if(!gameOver){if(spawning){spawnClock+=dt;if(spawnClock>1.05&&spawnLeft>0){spawn();spawnLeft--;spawnClock=0}if(spawnLeft===0)spawning=false}
-for(const e of [...enemies]){e.mesh.position.x-=e.speed*dt;if(e.mesh.position.x<-10.1){scene.remove(e.mesh);enemies=enemies.filter(x=>x!==e);const wallCount=buildings.filter(b=>b.type==='wall').length;hp-=Math.max(3,10-Math.min(6,wallCount));}}
+if(!gameOver){manualCooldown=Math.max(0,manualCooldown-dt);$('fire').textContent=manualCooldown>0?'⏳ Reloading…':'🎯 Fire Cannon';if(spawning){spawnClock+=dt;if(spawnClock>1.05&&spawnLeft>0){spawn();spawnLeft--;spawnClock=0}if(spawnLeft===0)spawning=false}
+for(const g of guards){g.cool-=dt;const target=enemies.find(e=>e.mesh.position.x<-5&&Math.abs(e.mesh.position.z-g.mesh.position.z)<3);if(target){if(g.cool<=0){hitEnemy(target,1);g.cool=.75}if(!enemies.includes(target))continue}else if(g.mesh.position.x<-8)g.mesh.position.x+=.15*dt;}
+for(const e of [...enemies]){let slowed=false;for(const g of guards){if(Math.abs(e.mesh.position.x-g.mesh.position.x)<1.1&&Math.abs(e.mesh.position.z-g.mesh.position.z)<1.5){slowed=true;break}}e.mesh.position.x-=e.speed*dt*(slowed?.35:1);if(e.mesh.position.x<-10.1){scene.remove(e.mesh);enemies=enemies.filter(x=>x!==e);const wallCount=buildings.filter(b=>b.type==='wall').length;hp-=Math.max(3,10-Math.min(6,wallCount));}}
 for(const b of buildings){if(b.type==='wall')continue;b.cool-=dt;if(b.cool<=0){let target=null,dist=b.type==='cannon'?13:10;for(const e of enemies){const d=e.mesh.position.distanceTo(new THREE.Vector3(b.x,0,b.z));if(d<dist){dist=d;target=e}}if(target){projectile({x:b.x,y:1.7,z:b.z},target,b.type);b.cool=b.type==='cannon'?1.45:.62}}}
+for(const fx of [...effects]){fx.life-=dt;fx.mesh.scale.multiplyScalar(1+dt*4);fx.mesh.material.opacity=Math.max(0,fx.life*1.8);if(fx.life<=0){scene.remove(fx.mesh);effects=effects.filter(v=>v!==fx)}}
 for(const q of [...bolts]){if(!q.target||!enemies.includes(q.target)){scene.remove(q.mesh);bolts=bolts.filter(x=>x!==q);continue}const dest=q.target.mesh.position.clone().add(new THREE.Vector3(0,1.4,0));const delta=dest.sub(q.mesh.position),len=delta.length(),step=q.speed*dt;if(len<step){const target=q.target,point=target.mesh.position.clone();hitEnemy(target,q.damage);if(q.splash)for(const other of [...enemies])if(other.mesh.position.distanceTo(point)<q.splash)hitEnemy(other,2);scene.remove(q.mesh);bolts=bolts.filter(x=>x!==q)}else q.mesh.position.add(delta.normalize().multiplyScalar(step))}
 if(hp<=0){hp=0;gameOver=true;$('start').disabled=true;say('The castle has fallen. Press Restart to try again.')}
 if(!spawning&&enemies.length===0&&!cleared&&wave>0&&!gameOver){cleared=true;gold+=25;$('start').disabled=false;say(wave===10?'VICTORY! You survived all 10 waves! +25 gold.':'Wave '+wave+' cleared! +25 gold. Prepare for the next attack.')}
@@ -102,5 +109,5 @@ function restart(){location.reload()}
 $('archer').onclick=()=>choose('archer');$('cannon').onclick=()=>choose('cannon');$('wall').onclick=()=>choose('wall');
 $('upgrade').onclick=()=>{if(gold<90)return say('Upgrade costs 90 gold.');gold-=90;maxHp+=35;hp=Math.min(maxHp,hp+35);updateHud();say('Castle upgraded! +35 maximum health.')};
 $('repair').onclick=()=>{if(hp>=maxHp)return say('Castle health is already full.');if(gold<30)return say('Repair costs 30 gold.');gold-=30;hp=Math.min(maxHp,hp+35);updateHud();say('Castle repaired by up to 35 health.')};
-$('start').onclick=startWave;$('restart').onclick=restart;init();updateHud();
+$('soldier').onclick=deployGuard;$('fire').onclick=fireCommandCannon;$('start').onclick=startWave;$('restart').onclick=restart;init();updateHud();
 </script></body></html>
